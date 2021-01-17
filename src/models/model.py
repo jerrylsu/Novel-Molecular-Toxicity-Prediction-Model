@@ -48,7 +48,7 @@ class StackedAutoEncoder(nn.Module):
         """
         super(StackedAutoEncoder, self).__init__()
 
-        self.ae1 = LDAutoEncoderLayer(5577, 6000)
+        self.ae1 = LDAutoEncoderLayer(5576, 6000)
         self.ae2 = LDAutoEncoderLayer(6000, 3000)
         self.ae3 = LDAutoEncoderLayer(3000, 1500)
         self.ae4 = LDAutoEncoderLayer(1500, 750)
