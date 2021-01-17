@@ -1,0 +1,72 @@
+import torch
+from torch import nn
+from torch.autograd import Variable
+
+
+class LDAutoEncoderLayer(nn.Module):
+    def __init__(self, input_size, output_size):
+        """非线性去噪自编码层，用于构造堆叠式自编码器。
+
+        :param input_size: 输入特征的维度。
+        :param output_size: 输出特征的维度。
+        """
+        super(LDAutoEncoderLayer, self).__init__()
+
+        self.encoder = nn.Sequential(
+            nn.Linear(input_size, output_size),
+            nn.ReLU(),
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(output_size, input_size),
+            nn.ReLU(),
+        )
+
+        self.criterion = nn.MSELoss()
+        self.optimizer = torch.optim.SGD(self.parameters(), lr=0.1)
+
+    def forward(self, x):
+        # 单独训练每一个自编码器
+        x = x.detach()
+        # 添加噪声
+        # x = ...
+        y = self.encoder(x)
+
+        if self.training:
+            x_reconstruct = self.decoder(y)
+            # loss = self.criterion(x_reconstruct, Variable(x.data, requires_grad=False))
+            loss = self.criterion(x_reconstruct, torch.tensor(x.data, requires_grad=False))
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+        return y.detach()
+
+
+class StackedAutoEncoder(nn.Module):
+    def __init__(self):
+        """ 堆叠式自编码器，从非线性去噪自编码层构造。每一个去噪自编码层均是独立训练。
+        """
+        super(StackedAutoEncoder, self).__init__()
+
+        self.ae1 = LDAutoEncoderLayer(5577, 6000)
+        self.ae2 = LDAutoEncoderLayer(6000, 3000)
+        self.ae3 = LDAutoEncoderLayer(3000, 1500)
+        self.ae4 = LDAutoEncoderLayer(1500, 750)
+        self.ae5 = LDAutoEncoderLayer(750, 375)
+        self.ae6 = LDAutoEncoderLayer(375, 2)
+
+    def forward(self, x):
+        a1 = self.ae1(x)
+        a2 = self.ae2(a1)
+        a3 = self.ae3(a2)
+
+        if self.training:
+            return a3
+        else:
+            return a3, self.reconstruct(a3)
+
+    def reconstruct(self, x):
+        a2_reconstruct = self.ae3.reconstruct(x)
+        a1_reconstruct = self.ae2.reconstruct(a2_reconstruct)
+        x_reconstruct = self.ae1.reconstruct(a1_reconstruct)
+        return x_reconstruct
