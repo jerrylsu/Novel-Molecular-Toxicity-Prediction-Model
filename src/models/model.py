@@ -39,7 +39,7 @@ class LDAutoEncoderLayer(nn.Module):
             loss.backward()
             self.optimizer.step()
 
-        return y.detach()
+        return y.detach(), loss if self.training else None
 
 
 class StackedAutoEncoderModel(nn.Module):
@@ -56,15 +56,15 @@ class StackedAutoEncoderModel(nn.Module):
         self.ae6 = LDAutoEncoderLayer(375, 3)
 
     def forward(self, x):
-        a1 = self.ae1(x)
-        a2 = self.ae2(a1)
-        a3 = self.ae3(a2)
-        a4 = self.ae4(a3)
-        a5 = self.ae5(a4)
-        a6 = self.ae6(a5)
+        a1, loss1 = self.ae1(x)
+        a2, loss2 = self.ae2(a1)
+        a3, loss3 = self.ae3(a2)
+        a4, loss4 = self.ae4(a3)
+        a5, loss5 = self.ae5(a4)
+        a6, loss6 = self.ae6(a5)
 
         if self.training:
-            return a6
+            return a6, loss6
         else:
             return a6, self.reconstruct(a6)
 
