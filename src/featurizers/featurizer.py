@@ -1,6 +1,8 @@
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-from typing import Optional
+import torch
+from tqdm import tqdm
+from typing import Optional, Tuple
 
 
 class CSFPDataset(Dataset):
@@ -16,13 +18,36 @@ class CSFPDataset(Dataset):
         pass
 
     def __getitem__(self, item: Optional[int]):
-        return self.dataset.iloc[item]
+        instance = self.dataset.iloc[item].to_list()
+        input_ids, label = instance[:-1], instance[-1]
+        input_ids, label = torch.tensor(input_ids).float(), torch.tensor(label)
+        # ones_cnt = len(list(filter(lambda x: x == 1, instance[:-1])))
+        return {"input_ids": input_ids, "label": label}
 
     def __len__(self) -> int:
         return self.dataset.shape[0]
 
 
+def get_dataloader(train_dataset: Optional[Dataset],
+                   batch_size: Optional[int],
+                   test_dataset: Optional[Dataset] = None,
+                   shuffle: Optional[bool] = False,
+                   num_workers: Optional[int] = 0) -> Tuple[DataLoader, Optional[DataLoader]]:
+        train_dataloader = DataLoader(dataset=train_dataset,
+                                      batch_size=batch_size,
+                                      shuffle=shuffle,
+                                      num_workers=num_workers)
+        test_dataloader = DataLoader(dataset=test_dataset,
+                                     batch_size=batch_size,
+                                     shuffle=shuffle,
+                                     num_workers=num_workers)
+        return train_dataloader, test_dataloader
+
+
 if __name__ == '__main__':
-    dataset = CSFPDataset('../..//data/train.csv', '../../data/Jiang1823Train.csv')
-    print(len(dataset))
-    pass
+    train_dataset = CSFPDataset('../..//data/train.csv', '../../data/Jiang1823Train.csv')
+    print(len(train_dataset))
+    train_dataloader, test_dataloader = get_dataloader(train_dataset=train_dataset, batch_size=8)
+    for batch in tqdm(train_dataloader, desc="Train_dataloader: "):
+        batch = {key: value.to("cpu") for key, value in batch.items()}
+        pass
