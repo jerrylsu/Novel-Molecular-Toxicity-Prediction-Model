@@ -41,6 +41,9 @@ class LDAutoEncoderLayer(nn.Module):
 
         return y.detach(), loss if self.training else None
 
+    def reconstruct(self, x):
+        return self.decoder(x)
+
 
 class StackedAutoEncoderModel(nn.Module):
     def __init__(self):
