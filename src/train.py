@@ -81,7 +81,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--input_file",
                         type=str,
-                        default=os.path.join(DATA_PATH, 'train.csv'),
+                        default=os.path.join(DATA_PATH, 'train_base_jerry.binary.csv'),
                         help="Path of the dataset.")
     parser.add_argument("--label_file",
                         type=str,

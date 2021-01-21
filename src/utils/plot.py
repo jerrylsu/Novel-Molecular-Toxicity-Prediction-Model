@@ -21,3 +21,4 @@ def plot(encode, labels):
 if __name__ == "__main__":
     fig = plt.figure(num='SDAE')
     ax = Axes3D(fig)
+    pass

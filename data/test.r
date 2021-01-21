@@ -1,6 +1,6 @@
-setwd("E:/p2020/分子指纹自编码器")
+setwd("E:\\program\\software\\cygwin\\home\\YCKJ2939\\project\\Stacked-AutoEncoder-Model\\data")
 library(tidyverse)
-test.file <- readLines("test.csv")
+test.file <- readLines("jerry.csv")
 
 feature.list <- list()
 for (Line in test.file) {
@@ -14,5 +14,5 @@ for (Line in test.file) {
 
 feature.binary <- as.data.frame.matrix(t(table(stack(feature.list))))
 
-write.csv(feature.binary, "feature.binary.csv")
+write.csv(feature.binary, "train_base_jerry.binary.csv")
 
