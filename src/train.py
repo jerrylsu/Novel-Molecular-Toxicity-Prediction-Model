@@ -32,7 +32,7 @@ class Trainer:
         self.sae_model = StackedAutoEncoderModel(input_size=input_size, output_size=3).to(self.args.device)
         self.classifier = ClassifierLayer().to(self.args.device)
         self.writer = SummaryWriter(self.args.log_path)
-        self.writer.add_graph(model=self.sae_model, input_to_model=next(iter(self.train_dataloader))["input_ids"])
+        self.writer.add_graph(model=self.sae_model, input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
         pass
 
     def eval(self):
