@@ -46,17 +46,17 @@ class LDAutoEncoderLayer(nn.Module):
 
 
 class StackedAutoEncoderModel(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size, output_size: int = 3):
         """ 堆叠式自编码器，从非线性去噪自编码层构造。每一个去噪自编码层均是独立训练。
         """
         super(StackedAutoEncoderModel, self).__init__()
 
-        self.ae1 = LDAutoEncoderLayer(5576, 6000)
+        self.ae1 = LDAutoEncoderLayer(input_size, 6000)
         self.ae2 = LDAutoEncoderLayer(6000, 3000)
         self.ae3 = LDAutoEncoderLayer(3000, 1500)
         self.ae4 = LDAutoEncoderLayer(1500, 750)
         self.ae5 = LDAutoEncoderLayer(750, 375)
-        self.ae6 = LDAutoEncoderLayer(375, 3)
+        self.ae6 = LDAutoEncoderLayer(375, output_size)
 
     def forward(self, x):
         a1, loss1 = self.ae1(x)

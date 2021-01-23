@@ -2,7 +2,8 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import torch
 from tqdm import tqdm
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Callable
+from src.utils.utils import assert_statistics
 
 
 class CSFPDataset(Dataset):
@@ -10,11 +11,13 @@ class CSFPDataset(Dataset):
     """
     def __init__(self, input_file_path: Optional[str], label_file_path: Optional[str]):
         super(CSFPDataset, self).__init__()
-        self.features = pd.read_csv(input_file_path)
-        self.labels = pd.read_csv(label_file_path)
+        self.features = pd.read_csv(input_file_path).set_index('Unnamed: 0')  # 1452
+        self.labels = pd.read_csv(label_file_path).set_index('Name')    # 1458
         self.labels['label'] = self.labels['Toxicity'].apply(lambda x: 1 if x == 'P' else 0)
         self.labels = self.labels.drop(['Toxicity'], axis=1)
-        self.dataset = self.features.set_index('Name').join(self.labels.set_index('Name'), how='inner')
+        self.dataset = self.features.join(self.labels, how='inner')
+
+        assert_statistics(self.features, self.labels, self.dataset)
         pass
 
     def __getitem__(self, item: Optional[int]):
@@ -30,17 +33,20 @@ class CSFPDataset(Dataset):
 
 def get_dataloader(train_dataset: Optional[Dataset],
                    batch_size: Optional[int],
-                   test_dataset: Optional[Dataset] = None,
+                   collate_fn: Optional[Callable],
+                   validation_dataset: Optional[Dataset] = None,
                    shuffle: Optional[bool] = False,
                    num_workers: Optional[int] = 0) -> Tuple[DataLoader, Optional[DataLoader]]:
         train_dataloader = DataLoader(dataset=train_dataset,
                                       batch_size=batch_size,
+                                      collate_fn=collate_fn,
                                       shuffle=shuffle,
                                       num_workers=num_workers)
-        test_dataloader = DataLoader(dataset=test_dataset,
-                                     batch_size=batch_size,
-                                     shuffle=shuffle,
-                                     num_workers=num_workers)
+        test_dataloader = None#DataLoader(dataset=validation_dataset,
+                          #           batch_size=batch_size,
+                          #           collate_fn=collate_fn,
+                          #           shuffle=shuffle,
+                          #           num_workers=num_workers)
         return train_dataloader, test_dataloader
 
 

@@ -6,7 +6,7 @@ fig = plt.figure(num="SDAE")
 ax = Axes3D(fig)
 
 
-def plot(encode, labels):
+def plot_3d(encode, labels):
     X, Y, Z = encode.data[:, 0].numpy(), encode.data[:, 1].numpy(), encode.data[:, 2].numpy()
     labels = labels.numpy()
     for x, y, z, s in zip(X, Y, Z, labels):

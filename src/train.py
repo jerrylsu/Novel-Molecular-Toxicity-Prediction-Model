@@ -10,7 +10,8 @@ from torch.autograd import Variable
 sys.path.append(os.path.dirname(os.getcwd()))
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
 from src.models.model import StackedAutoEncoderModel, ClassifierLayer
-from src.utils.plot import plot
+from src.utils.utils import custom_collate_fn
+# from src.utils.plot import plot_3d
 
 PROJECT_PATH = os.path.dirname(os.getcwd())  # get current working directory
 DATA_PATH = os.path.join(PROJECT_PATH, 'data')
@@ -20,10 +21,15 @@ LOG_PATH = os.path.join(PROJECT_PATH, 'log')
 class Trainer:
     def __init__(self, args):
         self.args = args
-        self.train_dataset = CSFPDataset(self.args.input_file, self.args.label_file)
-        self.train_dataloader, self.test_dataloader = get_dataloader(train_dataset=self.train_dataset,
-                                                                     batch_size=self.args.batch_size)
-        self.sae_model = StackedAutoEncoderModel().to(self.args.device)
+        self.train_dataset = CSFPDataset(self.args.train_input_file, self.args.train_label_file)
+        # self.validation_dataset = CSFPDataset(self.args.validation_input_file, self.args.validation_label_file)
+        self.train_dataloader, self.validation_dataloader = get_dataloader(train_dataset=self.train_dataset,
+                                                                           # validation_dataset=self.validation_dataset,
+                                                                           collate_fn=custom_collate_fn,
+                                                                           batch_size=self.args.batch_size,
+                                                                           shuffle=True)
+        input_size = next(iter(self.train_dataloader))["input_ids"].shape[1]
+        self.sae_model = StackedAutoEncoderModel(input_size=input_size, output_size=3).to(self.args.device)
         self.classifier = ClassifierLayer().to(self.args.device)
         self.writer = SummaryWriter(self.args.log_path)
         self.writer.add_graph(model=self.sae_model, input_to_model=next(iter(self.train_dataloader))["input_ids"])
@@ -56,7 +62,7 @@ class Trainer:
                 output_ids, sae_loss = output[0].detach(), output[1]
                 output_ids = output_ids.view(output_ids.size(0), -1)
                 label = label.view(-1)
-                plot(encode=output_ids, labels=label)
+                #plot(encode=output_ids, labels=label)
                 prediction = self.classifier(output_ids)
                 classifier_loss = self.classifier.criterion(prediction, label)
 
@@ -79,20 +85,28 @@ class Trainer:
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--input_file",
+    parser.add_argument("--train_input_file",
                         type=str,
-                        default=os.path.join(DATA_PATH, 'train_base_jerry.binary.csv'),
-                        help="Path of the dataset.")
-    parser.add_argument("--label_file",
+                        default=os.path.join(DATA_PATH, 'train_jerry.binary.csv'),
+                        help="Path of the train dataset.")
+    parser.add_argument("--train_label_file",
                         type=str,
-                        default=os.path.join(DATA_PATH, 'Jiang1823Train.csv'),
-                        help="Path of the label file.")
+                        default=os.path.join(DATA_PATH, 'LabelTrain.csv'),
+                        help="Path of the train label file.")
+    parser.add_argument("--validation_input_file",
+                        type=str,
+                        default=os.path.join(DATA_PATH, 'validation_jerry.binary.csv'),
+                        help="Path of the validation dataset.")
+    parser.add_argument("--validation_label_file",
+                        type=str,
+                        default=os.path.join(DATA_PATH, 'ValidationTrain.csv'),
+                        help="Path of the validation label file.")
     parser.add_argument("--device",
                         type=str,
                         default="cuda" if torch.cuda.is_available() else "cpu",
                         help="Device (cuda or cpu)")
     parser.add_argument("--log_path", type=str, default=LOG_PATH, help="Path of the log.")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch size for training.")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of subprocesses for data loading.")
