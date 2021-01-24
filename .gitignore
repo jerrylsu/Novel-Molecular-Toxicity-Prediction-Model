@@ -3,3 +3,4 @@ __pycharm__
 .DS_Store
 log
 *__pycache__
+data/visualization

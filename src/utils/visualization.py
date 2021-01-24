@@ -18,8 +18,7 @@ def Visualization():
 
 
 def plot_3d(encode, labels):
-    X, Y, Z = encode.data[:, 0].numpy(), encode.data[:, 1].numpy(), encode.data[:, 2].numpy()
-    labels = labels.numpy()
+    X, Y, Z = encode[:, 0], encode[:, 1], encode[:, 2]
     for x, y, z, s in zip(X, Y, Z, labels):
         c = cm.rainbow(int(255 * s / 9))
         ax.text(x=x, y=y, z=z, s=s, backgroundcolor=c)
@@ -30,8 +29,8 @@ def plot_3d(encode, labels):
 
 
 def plot_2d(predicts, labels):
-    X, Y = predicts.data[:, 0].numpy(), predicts.data[:, 1].numpy()
-    C = ['r' if label == 0 else 'b' for label in labels.numpy()]
+    X, Y = predicts[:, 0], predicts[:, 1]
+    C = ['r' if label == 0 else 'b' for label in labels]
     for x, y, c in zip(X, Y, C):
         plt.scatter(x=x, y=y, s=75, c=c, alpha=0.5)
     plt.xlim(X.min(), X.max())
@@ -40,7 +39,7 @@ def plot_2d(predicts, labels):
 
 if __name__ == "__main__":
     visualization_data = torch.load("/Users/jerry/PycharmProjects/SDAE/data/visualization/visualization.bin")
-    sdae, classifer, labels = visualization_data["epoch4"]["sdae"], visualization_data["epoch4"]["classifer"], visualization_data["epoch4"]["labels"]
+    sdae, classifer, labels = visualization_data["epoch4"]["sdae"], visualization_data["epoch4"]["classifier"], visualization_data["epoch4"]["labels"]
     plot_3d(sdae, labels)
     plot_2d(classifer, labels)
     pass
