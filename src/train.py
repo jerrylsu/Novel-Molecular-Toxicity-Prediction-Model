@@ -51,7 +51,7 @@ class Trainer:
     def to_serialization(self, visualization: Mapping):
         if not os.path.exists(self.args.visualization_dir):
             os.mkdir(self.args.visualization_dir)
-        torch.save(visualization, os.path.join(self.args.visualization_dir, "visualization_exp1.bin"))
+        torch.save(visualization, os.path.join(self.args.visualization_dir, "visualization.bin"))
 
     def eval(self):
         features, labels = [], []

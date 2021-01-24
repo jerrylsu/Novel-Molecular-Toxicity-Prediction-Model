@@ -33,8 +33,8 @@ class LDAutoEncoderLayer(nn.Module):
 
         if self.training:
             x_reconstruct = self.decoder(y)
-            # loss = self.criterion(x_reconstruct, Variable(x.data, requires_grad=False))
-            loss = self.criterion(x_reconstruct, x.clone().detach().requires_grad_(False))
+            loss = self.criterion(x_reconstruct, Variable(x.data, requires_grad=False))
+            # loss = self.criterion(x_reconstruct, x.clone().detach().requires_grad_(False))
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

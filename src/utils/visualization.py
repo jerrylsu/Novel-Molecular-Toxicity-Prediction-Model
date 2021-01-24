@@ -38,8 +38,8 @@ def plot_2d(predicts, labels):
 
 
 if __name__ == "__main__":
-    visualization_data = torch.load("/Users/jerry/PycharmProjects/SDAE/data/visualization/visualization_exp1.bin")
-    sdae, classifer, labels = visualization_data["epoch33"]["sdae"], visualization_data["epoch33"]["classifier"], visualization_data["epoch33"]["labels"]
+    visualization_data = torch.load("/Users/jerry/PycharmProjects/SDAE/data/visualization/visualization_exp2.bin")
+    sdae, classifer, labels = visualization_data["epoch19"]["sdae"], visualization_data["epoch19"]["classifier"], visualization_data["epoch19"]["labels"]
     #plot_3d(sdae, labels)
     plot_2d(classifer, labels)
     pass

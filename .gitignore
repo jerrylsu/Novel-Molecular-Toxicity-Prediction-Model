@@ -4,3 +4,5 @@ __pycharm__
 log
 *__pycache__
 data/visualization
+latent-gan-master
+data/encode.py
