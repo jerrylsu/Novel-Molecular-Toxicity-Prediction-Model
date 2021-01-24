@@ -102,9 +102,9 @@ class Trainer:
                 pred = prediction.data.max(1, keepdim=True)[1]
                 correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
             accuracy = f"Accuracy of epoch {epoch}: {round(correct / self.train_total, 4)}"
-            visualization_data[f"epoch{epoch}"] = {"sdae": torch.cat(sdae_epoch_data, dim=0).numpy(),
-                                                   "classifier": torch.cat(classifier_epoch_data, dim=0).numpy(),
-                                                   "labels": torch.cat(labels, dim=0).numpy(),
+            visualization_data[f"epoch{epoch}"] = {"sdae": torch.cat(sdae_epoch_data, dim=0).cpu().numpy(),
+                                                   "classifier": torch.cat(classifier_epoch_data, dim=0).cpu().numpy(),
+                                                   "labels": torch.cat(labels, dim=0).cpu().numpy(),
                                                    "accuracy": accuracy}
             total_time = time.time() - start_time
         # save for visualization

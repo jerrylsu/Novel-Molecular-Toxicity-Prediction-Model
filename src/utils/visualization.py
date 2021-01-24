@@ -41,4 +41,6 @@ def plot_2d(predicts, labels):
 if __name__ == "__main__":
     visualization_data = torch.load("/Users/jerry/PycharmProjects/SDAE/data/visualization/visualization.bin")
     sdae, classifer, labels = visualization_data["epoch4"]["sdae"], visualization_data["epoch4"]["classifer"], visualization_data["epoch4"]["labels"]
+    plot_3d(sdae, labels)
+    plot_2d(classifer, labels)
     pass
