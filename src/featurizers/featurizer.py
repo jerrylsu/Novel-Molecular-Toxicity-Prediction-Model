@@ -15,7 +15,7 @@ class CSFPDataset(Dataset):
         self.labels = pd.read_csv(label_file_path).set_index('Name')    # 1458
         self.labels['label'] = self.labels['Toxicity'].apply(lambda x: 1 if x == 'P' else 0)
         self.labels = self.labels.drop(['Toxicity'], axis=1)
-        self.dataset = self.features.join(self.labels, how='inner')
+        self.dataset = self.features.join(self.labels, how='inner')[:12]
 
         assert_statistics(self.features, self.labels, self.dataset)
         pass

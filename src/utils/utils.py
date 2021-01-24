@@ -17,7 +17,7 @@ def assert_statistics(features: pd.DataFrame, labels: pd.DataFrame, dataset: pd.
     dataset_names = set(dataset.index)
     intersection_fd = dataset_names.intersection(feature_names)
     print(f"Size: {len(intersection_fd)}. The intersection of dataset_names and feature_names: {intersection_fd}.")
-    assert dataset.shape[0] == features.shape[0]
+    #assert dataset.shape[0] == features.shape[0]
     pass
 
 
