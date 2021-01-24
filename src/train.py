@@ -29,6 +29,7 @@ class Trainer:
                                                                            # validation_dataset=self.validation_dataset,
                                                                            collate_fn=custom_collate_fn,
                                                                            batch_size=self.args.batch_size,
+                                                                           num_workers=self.args.num_workers,
                                                                            shuffle=True)
         self.train_total = len(self.train_dataset)
         self.train_input_size = next(iter(self.train_dataloader))["input_ids"].shape[1]
@@ -138,7 +139,7 @@ if __name__ == "__main__":
                         default="cuda" if torch.cuda.is_available() else "cpu",
                         help="Device (cuda or cpu)")
     parser.add_argument("--log_path", type=str, default=LOG_DIR, help="Path of the log.")
-    parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
+    parser.add_argument("--batch_size", type=int, default=256, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
