@@ -51,33 +51,24 @@ class StackedAutoEncoderModel(nn.Module):
         """
         super(StackedAutoEncoderModel, self).__init__()
 
-        self.ae1 = LDAutoEncoderLayer(input_size, 6000)
-        self.ae2 = LDAutoEncoderLayer(6000, 3000)
-        self.ae3 = LDAutoEncoderLayer(3000, 1500)
-        self.ae4 = LDAutoEncoderLayer(1500, 750)
-        self.ae5 = LDAutoEncoderLayer(750, 375)
-        self.ae6 = LDAutoEncoderLayer(375, output_size)
+        self.ae1 = LDAutoEncoderLayer(input_size, 512)
+        self.ae2 = LDAutoEncoderLayer(512, 256)
+        self.ae3 = LDAutoEncoderLayer(256, output_size)
 
     def forward(self, x):
         a1, loss1 = self.ae1(x)
         a2, loss2 = self.ae2(a1)
         a3, loss3 = self.ae3(a2)
-        a4, loss4 = self.ae4(a3)
-        a5, loss5 = self.ae5(a4)
-        a6, loss6 = self.ae6(a5)
 
         if self.training:
-            return a6, loss6
+            return a3, loss3
         else:
-            return a6, self.reconstruct(a6)
+            return a3, self.reconstruct(a3)
 
     def reconstruct(self, x):
-        a5_reconstruct = self.ae6.reconstruct(x)
-        a4_reconstruct = self.ae5.reconstruct(a5_reconstruct)
-        a3_reconstruct = self.ae4.reconstruct(a4_reconstruct)
-        a2_reconstruct = self.ae3.reconstruct(a3_reconstruct)
-        a1_reconstruct = self.ae2.reconstruct(a2_reconstruct)
-        x_reconstruct = self.ae1.reconstruct(a1_reconstruct)
+        a3_reconstruct = self.ae3.reconstruct(x)
+        a2_reconstruct = self.ae2.reconstruct(a3_reconstruct)
+        x_reconstruct = self.ae1.reconstruct(a2_reconstruct)
         return x_reconstruct
 
 

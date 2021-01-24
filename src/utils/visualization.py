@@ -5,9 +5,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from src.train import VISUALIZATION_DIR
 
-fig = plt.figure(num="SDAE")  # 画布
-ax = Axes3D(fig)
-
 
 def Visualization():
 
@@ -18,6 +15,8 @@ def Visualization():
 
 
 def plot_3d(encode, labels):
+    fig = plt.figure(num="SDAE")  # 画布
+    ax = Axes3D(fig)
     X, Y, Z = encode[:, 0], encode[:, 1], encode[:, 2]
     for x, y, z, s in zip(X, Y, Z, labels):
         c = cm.rainbow(int(255 * s / 9))
@@ -29,6 +28,7 @@ def plot_3d(encode, labels):
 
 
 def plot_2d(predicts, labels):
+    fig = plt.figure(num="SDAE")  # 画布
     X, Y = predicts[:, 0], predicts[:, 1]
     C = ['r' if label == 0 else 'b' for label in labels]
     for x, y, c in zip(X, Y, C):
@@ -38,8 +38,8 @@ def plot_2d(predicts, labels):
 
 
 if __name__ == "__main__":
-    visualization_data = torch.load("/Users/jerry/PycharmProjects/SDAE/data/visualization/visualization.bin")
-    sdae, classifer, labels = visualization_data["epoch4"]["sdae"], visualization_data["epoch4"]["classifier"], visualization_data["epoch4"]["labels"]
-    plot_3d(sdae, labels)
+    visualization_data = torch.load("/Users/jerry/PycharmProjects/SDAE/data/visualization/visualization_exp1.bin")
+    sdae, classifer, labels = visualization_data["epoch33"]["sdae"], visualization_data["epoch33"]["classifier"], visualization_data["epoch33"]["labels"]
+    #plot_3d(sdae, labels)
     plot_2d(classifer, labels)
     pass
