@@ -42,12 +42,12 @@ def get_dataloader(train_dataset: Optional[Dataset],
                                       collate_fn=collate_fn,
                                       shuffle=shuffle,
                                       num_workers=num_workers)
-        test_dataloader = None#DataLoader(dataset=validation_dataset,
-                          #           batch_size=batch_size,
-                          #           collate_fn=collate_fn,
-                          #           shuffle=shuffle,
-                          #           num_workers=num_workers)
-        return train_dataloader, test_dataloader
+        validation_dataloader = DataLoader(dataset=validation_dataset,
+                                           batch_size=batch_size,
+                                           collate_fn=collate_fn,
+                                           shuffle=shuffle,
+                                           num_workers=num_workers)
+        return train_dataloader, validation_dataloader
 
 
 if __name__ == '__main__':

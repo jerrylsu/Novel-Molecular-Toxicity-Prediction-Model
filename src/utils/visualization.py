@@ -38,7 +38,7 @@ def plot_2d(predicts, labels):
 
 
 if __name__ == "__main__":
-    visualization_data = torch.load("/Users/jerry/PycharmProjects/SDAE/data/visualization/visualization_exp2.bin")
+    visualization_data = torch.load(os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), 'data/visualization/visualization.bin'))
     sdae, classifer, labels = visualization_data["epoch19"]["sdae"], visualization_data["epoch19"]["classifier"], visualization_data["epoch19"]["labels"]
     #plot_3d(sdae, labels)
     plot_2d(classifer, labels)
