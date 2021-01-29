@@ -26,7 +26,11 @@ class FingerPrints(object):
         else:
             print(f"Load smiles vocab from smiles_vocab.pt cache.")
             self.vocab_freq = torch.load(self.args.smiles_vocab)
+        print(f"The size of vocab_freq: {len(self.vocab_freq)}")
         self.vocab_freq_squeezed = self._squeeze_vocab_frequency(self.vocab_freq)
+        print(f"The size of vocab_freq_squeezed: {len(self.vocab_freq_squeezed)}")
+        self.dict = self._create_dictionary(self.vocab_freq_squeezed)
+        print(f"The size of dictionary: {len(self.dict)}")
         pass
 
     def _fingerprints_generator(self) -> List[List[int]]:
@@ -63,6 +67,9 @@ class FingerPrints(object):
     def _squeeze_vocab_frequency(self, vocab_freq):
         vocab_freq_squeezed = list(filter(lambda vocab: self.args.lower < vocab[1] < self.args.upper, vocab_freq))
         return vocab_freq_squeezed
+
+    def _create_dictionary(self, vocab_freq_squeezed):
+        return {data[0]: index for index, data in enumerate(vocab_freq_squeezed)}
 
     def _to_onehot(self, fp_list: Optional[List[int]]) -> List[int]:
         # molecule = csfpy.Molecule("Cn1cnc2c1c(=O)n(CC(O)CO)c(=O)n2C")
