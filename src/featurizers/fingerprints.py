@@ -51,9 +51,9 @@ class FingerPrints(object):
 
                 # len(fingerprint): 114
                 # SparsIntVec objects can be converted to lists of integers
-                fingerprint = fingerprint.toList()
+                fingerprint_list = fingerprint.toList()
 
-                yield fingerprint
+                yield fingerprint_list
 
     def _vocab_frequency_statistics(self):
         vocab_freq = {}
@@ -84,12 +84,17 @@ class FingerPrints(object):
         one_hots = []
         for fp_list in tqdm(self._fingerprints_generator(self.args.smiles_file), desc="Convert to onehot:"):
             one_hots.append(self._to_onehot(fp_list))
+        res = list(map(lambda x: sum(x), one_hots))
+        # 删除全0
+
+        # 删除重复
+
         return one_hots
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--smiles_file", type=str, default="../../data/dataset_v1.csv", help="Path of the smiles file.")
+    parser.add_argument("--smiles_file", type=str, default="../../data/test.csv", help="Path of the smiles file.")
     parser.add_argument("--smiles_vocab", type=str, default="../../data/vocab/smiles_vocab.pt", help="Path of the smiles vocab file.")
     parser.add_argument("--upper", type=int, default=20000, help="the upper of squeeze vocab.")
     parser.add_argument("--lower", type=int, default=100, help="the lower of squeeze vocab.")
