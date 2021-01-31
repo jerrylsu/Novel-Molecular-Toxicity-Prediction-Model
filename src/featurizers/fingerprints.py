@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple
 import os
 import sys
 from argparse import ArgumentParser
@@ -71,19 +71,29 @@ class FingerPrints(object):
     def _create_dictionary(self, vocab_freq_squeezed):
         return {data[0]: index for index, data in enumerate(vocab_freq_squeezed)}
 
-    def _to_onehot(self, fp_list: Optional[List[int]]) -> List[int]:
+    def _to_onehot(self, fp_list: Optional[List[int]]) -> Tuple[int, int, List[int]]:
         one_hot = [0] * len(self.dict)
+        miss, total = 0, len(fp_list)
         for elem in fp_list:
             try:
                 one_hot[self.dict[elem]] = 1
             except KeyError as ke:
-                pass
-        return one_hot
+                miss += 1
+        return miss, total, one_hot
 
     def to_onehot(self):
-        one_hots = []
-        for fp_list in tqdm(self._fingerprints_generator(self.args.smiles_file), desc="Convert to onehot:"):
-            one_hots.append(self._to_onehot(fp_list))
+        miss_all, total_all, one_hots = 0, 0, []
+        with open("../../data/jerry_test.csv") as fp:
+            lines = fp.readlines()
+            for line in lines:
+                line = list(filter(lambda x: x != '', line.split(",")))[2:-1]
+                line = list(map(lambda x: int(x), line))
+                miss, total, one_hot = self._to_onehot(line)
+                miss_all = miss_all + miss
+                total_all = total_all + total
+        #for fp_list in tqdm(self._fingerprints_generator(self.args.smiles_file), desc="Convert to onehot:"):
+        #    one_hots.append(self._to_onehot(fp_list))
+        res = miss_all / total_all
         res = list(map(lambda x: sum(x), one_hots))
         # 删除全0
 
@@ -96,8 +106,8 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--smiles_file", type=str, default="../../data/test.csv", help="Path of the smiles file.")
     parser.add_argument("--smiles_vocab", type=str, default="../../data/vocab/smiles_vocab.pt", help="Path of the smiles vocab file.")
-    parser.add_argument("--upper", type=int, default=20000, help="the upper of squeeze vocab.")
-    parser.add_argument("--lower", type=int, default=100, help="the lower of squeeze vocab.")
+    parser.add_argument("--upper", type=int, default=2000000, help="the upper of squeeze vocab.")
+    parser.add_argument("--lower", type=int, default=0, help="the lower of squeeze vocab.")
     args = parser.parse_args()
     fp = FingerPrints(args=args)
     one_hots = fp.to_onehot()
