@@ -19,32 +19,45 @@ class FingerPrints(object):
     """
     def __init__(self, args):
         self.args = args
+        self.vocab_freq = {}
+        self.error_num = 0
         if not os.path.exists(self.args.smiles_vocab):
             print(f"The smiles vocab is not exist, and create it ...")
-            self.fingerprints_generator = self._fingerprints_generator(self.args.smiles_file)
-            self.vocab_freq = self._vocab_frequency_statistics()
+            self.vocab_freq = self._update_vocab_frequency(self.args.smiles_file,
+                                                           smiles_vocab=self.args.smiles_vocab,
+                                                           sep=",")
         else:
-            print(f"Load smiles vocab from smiles_vocab.pt cache.")
+            print(f"Load smiles vocab from smiles_vocab_190w.pt cache.")
             self.vocab_freq = torch.load(self.args.smiles_vocab)
+            if self.args.update_smiles_file:
+                self.vocab_freq = dict(self.vocab_freq)
+                self.vocab_freq = self._update_vocab_frequency(self.args.update_smiles_file,
+                                                               smiles_vocab=self.args.update_smiles_vocab,
+                                                               sep="\t")
         print(f"The size of vocab_freq: {len(self.vocab_freq)}")
         self.vocab_freq_squeezed = self._squeeze_vocab_frequency(self.vocab_freq)
         print(f"The size of vocab_freq_squeezed: {len(self.vocab_freq_squeezed)}")
         self.dict = self._create_dictionary(self.vocab_freq_squeezed)
         print(f"The size of dictionary: {len(self.dict)}")
+        print(f"Error num: {self.error_num}")
         pass
 
-    def _fingerprints_generator(self, smiles_file) -> List[List[int]]:
-        line_num = 0
+    def _fingerprints_generator(self, smiles_file, sep=",") -> List[List[int]]:
+        line_num = 0  # len(self.vocab_freq)
         with open(smiles_file, "r") as sf:
             while True:
                 molecule = sf.readline()
                 if not molecule:
                     break
-                molecule = molecule.split(",")[0].strip() + f" {str(line_num)}"
                 line_num += 1
+                molecule = molecule.split(sep)[0].strip() + f" {str(line_num)}"
 
                 # molecule: <csfpy.Molecule named '0' (id 4294967295, 34 atoms) [0x0000013cd4fa55c0]>
-                molecule = csfpy.Molecule(molecule)
+                try:
+                    molecule = csfpy.Molecule(molecule)
+                except RuntimeError as re:
+                    self.error_num += 1
+                    continue
 
                 # fingerprint: <csfpy.SparseIntVec of size 114 at [0x00000231bbbd0da0]>
                 fingerprint = csfpy.csfp(molecule, 2, 5)
@@ -55,13 +68,13 @@ class FingerPrints(object):
 
                 yield fingerprint_list
 
-    def _vocab_frequency_statistics(self):
-        vocab_freq = {}
-        for fp_list in tqdm(self.fingerprints_generator, desc="FingerPrint List"):
+    def _update_vocab_frequency(self, smiles_file, smiles_vocab, sep=","):
+        fingerprints_generator = self._fingerprints_generator(smiles_file, sep=sep)
+        for fp_list in tqdm(fingerprints_generator, desc="FingerPrint List"):
             for elem in fp_list:
-                vocab_freq[elem] = vocab_freq.get(elem, 0) + 1
-        vocab_freq_ordered = sorted(vocab_freq.items(), key=lambda x: x[1], reverse=True)
-        torch.save(vocab_freq_ordered, self.args.smiles_vocab)
+                self.vocab_freq[elem] = self.vocab_freq.get(elem, 0) + 1
+        vocab_freq_ordered = sorted(self.vocab_freq.items(), key=lambda x: x[1], reverse=True)
+        torch.save(vocab_freq_ordered, smiles_vocab)
         return vocab_freq_ordered
 
     def _squeeze_vocab_frequency(self, vocab_freq):
@@ -105,10 +118,30 @@ class FingerPrints(object):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--smiles_file", type=str, default="../../data/test.csv", help="Path of the smiles file.")
-    parser.add_argument("--smiles_vocab", type=str, default="../../data/vocab/smiles_vocab.pt", help="Path of the smiles vocab file.")
+    parser.add_argument("--update_smiles_file", type=str, default="./add_train_dev.smi", help="Path of the smiles file.")
+    parser.add_argument("--smiles_vocab", type=str, default="../../data/vocab/smiles_vocab_190w.pt", help="Path of the smiles vocab file.")
+    parser.add_argument("--update_smiles_vocab", type=str, default="../../data/vocab/update_smiles_vocab.pt", help="Path of the smiles vocab file.")
     parser.add_argument("--upper", type=int, default=2000000, help="the upper of squeeze vocab.")
     parser.add_argument("--lower", type=int, default=0, help="the lower of squeeze vocab.")
     args = parser.parse_args()
+    with open(args.update_smiles_file, 'r') as fp:
+        cnt = 0
+        while True:
+            cnt += 1
+            line = fp.readline()
+            #if "[P" in line:
+            #    print(line)
+            line = line.split("\t")[0]
+            if not line:
+                break
+            pass
+
+    mols = csfpy.Molecule.from_file("./Jiang1823Validate.smi")
+    print(len(mols))
+    for mol in mols:
+        #print("Name: " + mol.name + " and ID: " + str(mol.id))
+        pass
     fp = FingerPrints(args=args)
-    one_hots = fp.to_onehot()
+    # one_hots = fp.to_onehot()
+
     pass
