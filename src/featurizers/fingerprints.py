@@ -27,13 +27,15 @@ class FingerPrints(object):
                                                            smiles_vocab=self.args.smiles_vocab,
                                                            sep=",")
         else:
-            print(f"Load smiles vocab from smiles_vocab_190w.pt cache.")
-            self.vocab_freq = torch.load(self.args.smiles_vocab)
             if self.args.update_smiles_file:
+                self.vocab_freq = torch.load(self.args.smiles_vocab)
                 self.vocab_freq = dict(self.vocab_freq)
                 self.vocab_freq = self._update_vocab_frequency(self.args.update_smiles_file,
                                                                smiles_vocab=self.args.update_smiles_vocab,
                                                                sep="\t")
+            else:
+                print(f"Load smiles vocab from update_smiles_vocab.pt cache.")
+                self.vocab_freq = torch.load(self.args.update_smiles_vocab)
         print(f"The size of vocab_freq: {len(self.vocab_freq)}")
         self.vocab_freq_squeezed = self._squeeze_vocab_frequency(self.vocab_freq)
         print(f"The size of vocab_freq_squeezed: {len(self.vocab_freq_squeezed)}")
@@ -96,7 +98,7 @@ class FingerPrints(object):
 
     def to_onehot(self):
         miss_all, total_all, one_hots = 0, 0, []
-        with open("../../data/jerry_test.csv") as fp:
+        with open("../../data/jerry_train.csv") as fp:
             lines = fp.readlines()
             for line in lines:
                 line = list(filter(lambda x: x != '', line.split(",")))[2:-1]
@@ -118,30 +120,12 @@ class FingerPrints(object):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--smiles_file", type=str, default="../../data/test.csv", help="Path of the smiles file.")
-    parser.add_argument("--update_smiles_file", type=str, default="./add_train_dev.smi", help="Path of the smiles file.")
+    parser.add_argument("--update_smiles_file", type=str, default=None, help="Path of the smiles file.")
     parser.add_argument("--smiles_vocab", type=str, default="../../data/vocab/smiles_vocab_190w.pt", help="Path of the smiles vocab file.")
     parser.add_argument("--update_smiles_vocab", type=str, default="../../data/vocab/update_smiles_vocab.pt", help="Path of the smiles vocab file.")
     parser.add_argument("--upper", type=int, default=2000000, help="the upper of squeeze vocab.")
     parser.add_argument("--lower", type=int, default=0, help="the lower of squeeze vocab.")
     args = parser.parse_args()
-    with open(args.update_smiles_file, 'r') as fp:
-        cnt = 0
-        while True:
-            cnt += 1
-            line = fp.readline()
-            #if "[P" in line:
-            #    print(line)
-            line = line.split("\t")[0]
-            if not line:
-                break
-            pass
-
-    mols = csfpy.Molecule.from_file("./Jiang1823Validate.smi")
-    print(len(mols))
-    for mol in mols:
-        #print("Name: " + mol.name + " and ID: " + str(mol.id))
-        pass
     fp = FingerPrints(args=args)
-    # one_hots = fp.to_onehot()
-
+    one_hots = fp.to_onehot()
     pass
