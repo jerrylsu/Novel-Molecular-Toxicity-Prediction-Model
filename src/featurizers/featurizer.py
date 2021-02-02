@@ -4,6 +4,7 @@ import torch
 from tqdm import tqdm
 from typing import Optional, Tuple, Callable
 from src.utils.utils import assert_statistics
+from src.utils.utils import custom_collate_fn
 
 
 class CSFPDataset(Dataset):
@@ -16,7 +17,7 @@ class CSFPDataset(Dataset):
         pass
 
     def __getitem__(self, item: Optional[int]):
-        input_ids, label = torch.tensor(self.input_ids[item]).float(), torch.tensor(self.label[item])
+        input_ids, label = torch.tensor(self.input_ids[item]).float(), torch.tensor(self.labels[item])
         return {"input_ids": input_ids, "label": label}
 
     def __len__(self) -> int:
@@ -64,9 +65,14 @@ def get_dataloader(train_dataset: Optional[Dataset],
 
 
 if __name__ == '__main__':
+    train_dataset = CSFPDataset("../../data/dataset/validate_file.pt")
     validate_dataset = CSFPDataset("../../data/dataset/validate_file.pt")
     print(len(validate_dataset))
-    train_dataloader, test_dataloader = get_dataloader(train_dataset=validate_dataset, batch_size=8)
-    for batch in tqdm(train_dataloader, desc="Train_dataloader: "):
+    train_dataloader, test_dataloader = get_dataloader(train_dataset=train_dataset,
+                                                       batch_size=8,
+                                                       collate_fn=custom_collate_fn,
+                                                       validation_dataset=validate_dataset,
+                                                       shuffle=True)
+    for batch in tqdm(test_dataloader, desc="Train_dataloader: "):
         batch = {key: value.to("cpu") for key, value in batch.items()}
         pass

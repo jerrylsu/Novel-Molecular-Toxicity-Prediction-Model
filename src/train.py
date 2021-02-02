@@ -24,8 +24,8 @@ LOG_DIR = os.path.join(PROJECT_DIR, 'log')
 class Trainer:
     def __init__(self, args):
         self.args = args
-        self.train_dataset = CSFPDataset(self.args.train_input_file, self.args.train_label_file)
-        self.validation_dataset = CSFPDataset(self.args.validation_input_file, self.args.validation_label_file)
+        self.train_dataset = CSFPDataset(self.args.train_input_file)
+        self.validation_dataset = CSFPDataset(self.args.validation_input_file)
         self.train_dataloader, self.validation_dataloader = get_dataloader(train_dataset=self.train_dataset,
                                                                            validation_dataset=self.validation_dataset,
                                                                            collate_fn=custom_collate_fn,
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--train_input_file",
                         type=str,
-                        default=os.path.join(DATA_DIR, 'jerry_train.binary.csv'),
+                        default=os.path.join(DATA_DIR, 'dataset/train_file.pt'),
                         help="Path of the train dataset.")
     parser.add_argument("--train_label_file",
                         type=str,
@@ -136,7 +136,7 @@ if __name__ == "__main__":
                         help="Path of the train label file.")
     parser.add_argument("--validation_input_file",
                         type=str,
-                        default=os.path.join(DATA_DIR, 'jerry_validation.binary.csv'),
+                        default=os.path.join(DATA_DIR, 'dataset/validate_file.pt'),
                         help="Path of the validation dataset.")
     parser.add_argument("--validation_label_file",
                         type=str,
