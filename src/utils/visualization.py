@@ -38,7 +38,10 @@ def plot_2d(predicts, labels):
 
 
 if __name__ == "__main__":
+    """Single classifier: validation best epoch = epoch1"""
+
     vis = torch.load("../../data/visualization/visualization.bin")
-    predicts, labels = vis["epoch0"]["classifier"], vis["epoch0"]["labels"]
+    predicts, labels = vis["epoch1"]["validation_classifier"], vis["epoch1"]["validation_labels"]
+    # predicts, labels = vis["epoch4"]["train_classifier"], vis["epoch4"]["train_labels"]
     plot_2d(predicts, labels)
     pass
