@@ -7,3 +7,4 @@ data/visualization
 latent-gan-master
 data/encode.py
 data/dataset_v1.csv
+data/dataset
