@@ -59,11 +59,17 @@ class Trainer:
         self.sdae_model.eval()
         self.classifier.eval()
         correct = 0
-        for i, batch in enumerate(tqdm(self.train_dataloader, desc=f"Eval: ")):
+        for i, batch in enumerate(tqdm(self.validation_dataloader, desc=f"Eval: ")):
             batch = {key: value.to(self.args.device) for key, value in batch.items()}
             input_ids, label = batch["input_ids"], batch["label"]
             with torch.no_grad():
                 prediction = self.classifier(input_ids)
+                classifier_loss = self.classifier.criterion(prediction, label)
+                # for tensorboard
+                self.writer.add_scalar(tag="Classifier Validation Loss",
+                                       scalar_value=classifier_loss.item(),
+                                       global_step=epoch * len(self.validation_dataloader) + i)
+                # for metric
                 pred = prediction.data.max(1, keepdim=True)[1]
                 correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
                 # sdae_output = self.sdae_model(input_ids)
