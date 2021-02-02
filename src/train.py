@@ -78,7 +78,7 @@ class Trainer:
         for epoch in range(self.args.epochs):
             if epoch % 10 == 0:
                 # Test the quality of our features with a randomly initialzed linear classifier.
-                classifier = ClassifierLayer().to(self.args.device)
+                classifier = ClassifierLayer(input_size=self.train_input_size).to(self.args.device)
 
             self.sdae_model.train()
             self.classifier.train()
