@@ -36,7 +36,7 @@ class Trainer:
         self.train_input_size = next(iter(self.train_dataloader))["input_ids"].shape[1]
         self.validation_input_size = next(iter(self.validation_dataloader))["input_ids"].shape[1]
         self.sdae_model = StackedAutoEncoderModel(input_size=self.train_input_size, output_size=128).to(self.args.device)
-        self.classifier = ClassifierLayer().to(self.args.device)
+        self.classifier = ClassifierLayer(input_size=self.train_input_size).to(self.args.device)
         self.writer = SummaryWriter(self.args.log_path)
         self.writer.add_graph(model=self.sdae_model,
                               input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
