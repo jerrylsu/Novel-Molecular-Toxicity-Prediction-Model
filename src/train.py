@@ -59,6 +59,7 @@ class Trainer:
         self.sdae_model.eval()
         self.classifier.eval()
         correct = 0
+        validation_classifier_epoch_data, validation_labels = [], []
         for i, batch in enumerate(tqdm(self.validation_dataloader, desc=f"Eval: ")):
             batch = {key: value.to(self.args.device) for key, value in batch.items()}
             input_ids, label = batch["input_ids"], batch["label"]
@@ -69,6 +70,9 @@ class Trainer:
                 self.writer.add_scalar(tag="Classifier Validation Loss",
                                        scalar_value=classifier_loss.item(),
                                        global_step=epoch * len(self.validation_dataloader) + i)
+                # for visualization
+                validation_classifier_epoch_data.append(prediction.detach())
+                validation_labels.append(label)
                 # for metric
                 pred = prediction.data.max(1, keepdim=True)[1]
                 correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
@@ -76,7 +80,7 @@ class Trainer:
                 # encoded, decoded = sdae_output[0].detach(), sdae_output[1]
                 # encoded = encoded.view(encoded.size(0), -1)
         accuracy = f"Accuracy of validation epoch {epoch}: {round(correct / self.validation_total, 4)}"
-        return accuracy
+        return accuracy, validation_classifier_epoch_data, validation_labels
 
     def train(self):
         self.set_seed(self.args.seed)
@@ -90,7 +94,7 @@ class Trainer:
             self.classifier.train()
             start_time = time.time()
             correct = 0
-            sdae_epoch_data, classifier_epoch_data, labels = [], [], []
+            sdae_epoch_data, train_classifier_epoch_data, train_labels = [], [], []
             for i, batch in enumerate(tqdm(self.train_dataloader, desc=f"Epoch {epoch}: ")):
                 batch = {key: value.to(self.args.device) for key, value in batch.items()}
                 input_ids, label = batch["input_ids"], batch["label"]
@@ -113,17 +117,19 @@ class Trainer:
                 #                       global_step=epoch * len(self.train_dataloader) + i)
                 # for visualization
                 # sdae_epoch_data.append(sdae_encoded.detach())
-                classifier_epoch_data.append(prediction.detach())
-                labels.append(label)
+                train_classifier_epoch_data.append(prediction.detach())
+                train_labels.append(label)
                 # for metrics
                 pred = prediction.data.max(1, keepdim=True)[1]
                 correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
             train_accuracy = f"Accuracy of train epoch {epoch}: {round(correct / self.train_total, 4)}"
-            validation_accuracy = self.eval(epoch=epoch)
+            validation_accuracy, validation_classifier_epoch_data, validation_labels = self.eval(epoch=epoch)
             visualization_data[f"epoch{epoch}"] = {#"sdae": torch.cat(sdae_epoch_data, dim=0).cpu().numpy(),
-                                                   "classifier": torch.cat(classifier_epoch_data, dim=0).cpu().numpy(),
-                                                   "labels": torch.cat(labels, dim=0).cpu().numpy(),
+                                                   "train_classifier": torch.cat(train_classifier_epoch_data, dim=0).cpu().numpy(),
+                                                   "train_labels": torch.cat(train_labels, dim=0).cpu().numpy(),
                                                    "train_accuracy": train_accuracy,
+                                                   "validation_classifier": torch.cat(validation_classifier_epoch_data, dim=0).cpu().numpy(),
+                                                   "validation_labels": torch.cat(validation_labels, dim=0).cpu().numpy(),
                                                    "validation_accuracy": validation_accuracy}
             total_time = time.time() - start_time
         # save for visualization
