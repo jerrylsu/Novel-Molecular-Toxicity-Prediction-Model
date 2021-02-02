@@ -134,9 +134,9 @@ class FingerPrints(object):
                 miss += 1
         return miss, total, one_hot
 
-    def to_onehot(self):
+    def to_onehot(self, smiles_file, saved_file):
         miss_all, total_all, molecule_names, labels, one_hots = 0, 0, [], [], []
-        for molecule_name, label, fp_list in tqdm(self._fingerprints_generator(self.args.smiles_file, sep="\t"), desc="Convert to onehot:"):
+        for molecule_name, label, fp_list in tqdm(self._fingerprints_generator(smiles_file, sep="\t")):
             miss, total, onehot = self._to_onehot(fp_list)
             molecule_names.append(molecule_name)
             labels.append(label)
@@ -145,28 +145,54 @@ class FingerPrints(object):
             total_all = total_all + total
         print(f"Miss rate: {round(miss_all / total_all, 4) * 100}%")
 
-        aaa = self._molecule_to_list('[2H]C(=O)N(C([2H])([2H])[2H])C([2H])([2H])[2H]')
-        print(aaa)
-        bbb = self._molecule_to_list('CN(C)C=O')
-        print(bbb)
-        print(aaa==bbb)
-        raise  "Jerry"
-        self._show_duplicate_data(molecule_names, labels, one_hots)
-
+        # aaa = self._molecule_to_list('[2H]C(=O)N(C([2H])([2H])[2H])C([2H])([2H])[2H]')
+        # bbb = self._molecule_to_list('CN(C)C=O')
+        # self._show_duplicate_data(molecule_names, labels, one_hots)
+        torch.save({"molecule_name": molecule_names, "label": labels, "one_hots": one_hots}, f=saved_file)
         return one_hots
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--smiles_file", type=str, default="../../data/Jiang1823Train.smi", help="Path of the smiles file.")
-    parser.add_argument("--labels_file", type=str, default="../../data/LabelTrainValidate.csv", help="Path of the labels file.")
-    parser.add_argument("--update_smiles_file", type=str, default=None, help="Path of the smiles file.")
-    parser.add_argument("--smiles_vocab", type=str, default="../../data/vocab/update_smiles_vocab.pt", help="Path of the smiles vocab file.")
-    parser.add_argument("--labels_vocab", type=str, default="../../data/vocab/labels_vocab.pt", help="Path of the labels vocab file.")
-    parser.add_argument("--update_smiles_vocab", type=str, default="../../data/vocab/update_smiles_vocab.pt", help="Path of the smiles vocab file.")
+    parser.add_argument("--train_smiles_file",
+                        type=str,
+                        default="../../data/Jiang1823Train.smi",
+                        help="Path of the train smiles file.")
+    parser.add_argument("--validate_smiles_file",
+                        type=str,
+                        default="../../data/Jiang1823Validate.smi",
+                        help="Path of the validate smiles file.")
+    parser.add_argument("--labels_file",
+                        type=str,
+                        default="../../data/LabelTrainValidate.csv",
+                        help="Path of the labels file.")
+    parser.add_argument("--update_smiles_file",
+                        type=str,
+                        default=None,
+                        help="Path of the smiles file.")
+    parser.add_argument("--smiles_vocab",
+                        type=str,
+                        default="../../data/vocab/update_smiles_vocab.pt",
+                        help="Path of the smiles vocab file.")
+    parser.add_argument("--labels_vocab",
+                        type=str,
+                        default="../../data/vocab/labels_vocab.pt",
+                        help="Path of the labels vocab file.")
+    parser.add_argument("--train_file",
+                        type=str,
+                        default="../../data/dataset/train_file.pt",
+                        help="Path of the train file.")
+    parser.add_argument("--validate_file",
+                        type=str,
+                        default="../../data/dataset/validate_file.pt",
+                        help="Path of the validate file.")
+    parser.add_argument("--update_smiles_vocab",
+                        type=str,
+                        default="../../data/vocab/update_smiles_vocab.pt",
+                        help="Path of the smiles vocab file.")
     parser.add_argument("--upper", type=int, default=2000000, help="the upper of squeeze vocab.")
     parser.add_argument("--lower", type=int, default=0, help="the lower of squeeze vocab.")
     args = parser.parse_args()
     fp = FingerPrints(args=args)
-    one_hots = fp.to_onehot()
+    one_hots = fp.to_onehot(args.train_smiles_file, args.train_file)
     pass
