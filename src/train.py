@@ -12,7 +12,7 @@ import numpy as np
 from typing import Mapping
 sys.path.append(os.path.dirname(os.getcwd()))
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
-from src.models.model import StackedAutoEncoderModel, ClassifierLayer
+from src.models.model import StackedAutoEncoderModel, ClassifierModel, ClassifierLayer
 from src.utils.utils import custom_collate_fn
 
 PROJECT_DIR = os.path.dirname(os.getcwd())  # get current working directory
@@ -36,7 +36,8 @@ class Trainer:
         self.train_input_size = next(iter(self.train_dataloader))["input_ids"].shape[1]
         self.validation_input_size = next(iter(self.validation_dataloader))["input_ids"].shape[1]
         self.sdae_model = StackedAutoEncoderModel(input_size=self.train_input_size, output_size=128).to(self.args.device)
-        self.classifier = ClassifierLayer(input_size=self.train_input_size).to(self.args.device)
+        self.classifier_model = ClassifierModel(input_size=self.train_input_size).to(self.args.device)
+        self.classifier_layer = ClassifierLayer().to(self.args.device)
         self.writer = SummaryWriter(self.args.log_path)
         self.writer.add_graph(model=self.sdae_model,
                               input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
@@ -57,28 +58,37 @@ class Trainer:
 
     def eval(self, epoch):
         self.sdae_model.eval()
-        self.classifier.eval()
+        self.classifier_model.eval()
         correct = 0
         validation_classifier_epoch_data, validation_labels = [], []
         for i, batch in enumerate(tqdm(self.validation_dataloader, desc=f"Eval: ")):
             batch = {key: value.to(self.args.device) for key, value in batch.items()}
             input_ids, label = batch["input_ids"], batch["label"]
             with torch.no_grad():
-                prediction = self.classifier(input_ids)
-                classifier_loss = self.classifier.criterion(prediction, label)
+                # SDAE model
+                #sdae_output = self.sdae_model(input_ids)
+                #encoded, decoded = sdae_output[0].detach(), sdae_output[1]
+                #encoded = encoded.view(encoded.size(0), -1)
+                #label = label.view(-1)
+                #prediction = self.classifier_layer(encoded)
+                #classifier_layer_loss = self.classifier_layer.criterion(prediction, label)
+
+                # Single classifier model
+                prediction = self.classifier_model(input_ids)
+                classifier_model_loss = self.classifier_model.criterion(prediction, label)
                 # for tensorboard
-                self.writer.add_scalar(tag="Classifier Validation Loss",
-                                       scalar_value=classifier_loss.item(),
+                self.writer.add_scalar(tag="ClassifierModel Validation Loss",
+                                       scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.validation_dataloader) + i)
+                #self.writer.add_scalar(tag="ClassifierLayer Validation Loss",
+                #                       scalar_value=classifier_layer_loss.item(),
+                #                       global_step=epoch * len(self.validation_dataloader) + i)
                 # for visualization
                 validation_classifier_epoch_data.append(prediction.detach())
                 validation_labels.append(label)
                 # for metric
                 pred = prediction.data.max(1, keepdim=True)[1]
                 correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
-                # sdae_output = self.sdae_model(input_ids)
-                # encoded, decoded = sdae_output[0].detach(), sdae_output[1]
-                # encoded = encoded.view(encoded.size(0), -1)
         accuracy = f"Accuracy of validation epoch {epoch}: {round(correct / self.validation_total, 4)}"
         return accuracy, validation_classifier_epoch_data, validation_labels
 
@@ -86,37 +96,49 @@ class Trainer:
         self.set_seed(self.args.seed)
         visualization_data = {}
         for epoch in range(self.args.epochs):
-            if epoch % 10 == 0:
+            # if epoch % 10 == 0:
                 # Test the quality of our features with a randomly initialzed linear classifier.
-                classifier = ClassifierLayer(input_size=self.train_input_size).to(self.args.device)
+                # self.classifier_layer = ClassifierLayer().to(self.args.device)
 
             self.sdae_model.train()
-            self.classifier.train()
+            self.classifier_model.train()
             start_time = time.time()
             correct = 0
             sdae_epoch_data, train_classifier_epoch_data, train_labels = [], [], []
             for i, batch in enumerate(tqdm(self.train_dataloader, desc=f"Epoch {epoch}: ")):
                 batch = {key: value.to(self.args.device) for key, value in batch.items()}
                 input_ids, label = batch["input_ids"], batch["label"]
+                label = label.view(-1)
+
+                # SDAE model
                 #sdae_outputs = self.sdae_model(input_ids)
                 #sdae_encoded, sae_loss = sdae_outputs[0], sdae_outputs[1]
                 #sdae_encoded = sdae_encoded.view(sdae_encoded.size(0), -1)
-                label = label.view(-1)
-                #prediction = self.classifier(sdae_encoded)
-                prediction = self.classifier(input_ids)
-                classifier_loss = self.classifier.criterion(prediction, label)
-                self.classifier.optimizer.zero_grad()
-                classifier_loss.backward()
-                self.classifier.optimizer.step()
+                #prediction = self.classifier_layer(sdae_encoded)
+                #classifier_layer_loss = self.classifier_layer.criterion(prediction, label)
+                #self.classifier_layer.optimizer.zero_grad()
+                #classifier_layer_loss.backward()
+                #self.classifier_layer.optimizer.step()
+
+                # Single classifier model
+                prediction = self.classifier_model(input_ids)
+                classifier_model_loss = self.classifier_model.criterion(prediction, label)
+                self.classifier_model.optimizer.zero_grad()
+                classifier_model_loss.backward()
+                self.classifier_model.optimizer.step()
+
                 # for tensorboard
-                self.writer.add_scalar(tag="Classifier Train Loss",
-                                       scalar_value=classifier_loss.item(),
+                self.writer.add_scalar(tag="ClassifierModel Train Loss",
+                                       scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.train_dataloader) + i)
+                #self.writer.add_scalar(tag="ClassifierLayer Train Loss",
+                #                       scalar_value=classifier_layer_loss.item(),
+                #                       global_step=epoch * len(self.train_dataloader) + i)
                 #self.writer.add_scalar(tag="SAE Train Loss",
                 #                       scalar_value=sae_loss.item(),
                 #                       global_step=epoch * len(self.train_dataloader) + i)
                 # for visualization
-                # sdae_epoch_data.append(sdae_encoded.detach())
+                #sdae_epoch_data.append(sdae_encoded.detach())
                 train_classifier_epoch_data.append(prediction.detach())
                 train_labels.append(label)
                 # for metrics
@@ -166,7 +188,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=2, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
     args = parser.parse_args()
