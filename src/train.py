@@ -12,7 +12,8 @@ import numpy as np
 from typing import Mapping
 sys.path.append(os.path.dirname(os.getcwd()))
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
-from src.models.model import StackedAutoEncoderModel, ClassifierModel, ClassifierLayer
+from src.models.model import StackedAutoEncoderModel, ClassifierLayer
+from src.models.classifier_model import ClassifierModel
 from src.utils.utils import custom_collate_fn
 
 PROJECT_DIR = os.path.dirname(os.getcwd())  # get current working directory
