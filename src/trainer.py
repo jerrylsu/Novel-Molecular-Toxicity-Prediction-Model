@@ -1,19 +1,44 @@
 from typing import Any, Callable, Optional
+import os
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+from argparse import ArgumentParser
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
+from src.utils.utils import custom_collate_fn
+from torch.utils.tensorboard import SummaryWriter
 from src.models.sdae_model import AutoencoderLayer, StackedAutoEncoderModel
+from src.featurizers.featurizer import CSFPDataset, get_dataloader
+
+PROJECT_DIR = os.path.dirname(os.getcwd())  # get current working directory
+DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization')
+LOG_DIR = os.path.join(PROJECT_DIR, 'log')
 
 
-class Trainer():
-    def __init__(self):
+class Trainer(object):
+    def __init__(self, args):
+        self.args = args
+        self.train_dataset = CSFPDataset(self.args.train_input_file)
+        self.validation_dataset = CSFPDataset(self.args.validation_input_file)
+        self.train_dataloader, self.validation_dataloader = get_dataloader(train_dataset=self.train_dataset,
+                                                                           validation_dataset=self.validation_dataset,
+                                                                           collate_fn=custom_collate_fn,
+                                                                           batch_size=self.args.batch_size,
+                                                                           num_workers=self.args.num_workers,
+                                                                           shuffle=True)
+        self.train_total, self.validation_total = len(self.train_dataset), len(self.validation_dataset)
+        self.train_input_size = next(iter(self.train_dataloader))["input_ids"].shape[1]
+        self.validation_input_size = next(iter(self.validation_dataloader))["input_ids"].shape[1]
+        self.sdae_model = StackedAutoEncoderModel(dimensions=[self.train_input_size, 2048, 1024, 512, 256, 128], final_activation=None).to(self.args.device)
+        self.writer = SummaryWriter(self.args.log_path)
+        self.writer.add_graph(model=self.sdae_model,
+                              input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
         pass
 
     def train(
             self,
-            dataset: torch.utils.data.Dataset,
             autoencoder: torch.nn.Module,
             epochs: int,
             batch_size: int,
@@ -32,7 +57,6 @@ class Trainer():
         """
         Function to train an autoencoder using the provided dataset. If the dataset consists of 2-tuples or lists of
         (feature, prediction), then the prediction is stripped away.
-        :param dataset: training Dataset, consisting of tensors shape [batch_size, features]
         :param autoencoder: autoencoder to train
         :param epochs: number of training epochs
         :param batch_size: batch size for training
@@ -49,24 +73,6 @@ class Trainer():
         :param epoch_callback: optional function of epoch and model
         :return: None
         """
-        dataloader = DataLoader(
-            dataset,
-            batch_size=batch_size,
-            pin_memory=False,
-            sampler=sampler,
-            shuffle=True if sampler is None else False,
-            num_workers=num_workers if num_workers is not None else 0,
-        )
-        if validation is not None:
-            validation_loader = DataLoader(
-                validation,
-                batch_size=batch_size,
-                pin_memory=False,
-                sampler=None,
-                shuffle=False,
-            )
-        else:
-            validation_loader = None
         loss_function = nn.MSELoss()
         autoencoder.train()
         validation_loss_value = -1
@@ -74,36 +80,30 @@ class Trainer():
         for epoch in range(epochs):
             if scheduler is not None:
                 scheduler.step()
-            data_iterator = tqdm(
-                dataloader,
-                leave=True,
-                unit="batch",
-                postfix={"epo": epoch, "lss": "%.6f" % 0.0, "vls": "%.6f" % -1, },
-                disable=silent,
-            )
-            for index, batch in enumerate(data_iterator):
-                if (
-                        isinstance(batch, tuple)
-                        or isinstance(batch, list)
-                        and len(batch) in [1, 2]
-                ):
-                    batch = batch[0]
-                if cuda:
-                    batch = batch.cuda(non_blocking=True)
-                # run the batch through the autoencoder and obtain the output
+            train_iterator = tqdm(self.train_dataloader,
+                                 leave=True,
+                                 unit="batch",
+                                 postfix={"epo": epoch, "lss": "%.6f" % 0.0, "vls": "%.6f" % -1, },
+                                 disable=silent)
+            for index, batch in enumerate(train_iterator):
+                batch = {key: value.to(self.args.device) for key, value in batch.items()}
+                input_ids, label = batch["input_ids"], batch["label"]
+                label = label.view(-1)
                 if corruption is not None:
-                    output = autoencoder(F.dropout(batch, corruption))
+                    sdae_output = autoencoder(F.dropout(input_ids, corruption))
                 else:
-                    output = autoencoder(batch)
-                loss = loss_function(output, batch)
+                    sdae_output = autoencoder(input_ids)
+                sdae_loss = loss_function(sdae_output, label)
                 # accuracy = pretrain_accuracy(output, batch)
-                loss_value = float(loss.item())
                 optimizer.zero_grad()
-                loss.backward()
+                sdae_loss.backward()
                 optimizer.step(closure=None)
-                data_iterator.set_postfix(
-                    epo=epoch, lss="%.6f" % loss_value, vls="%.6f" % validation_loss_value,
-                )
+                train_iterator.set_postfix(epo=epoch, lss="%.6f" % float(sdae_loss.item()), vls="%.6f" % validation_loss_value)
+                # for tensorboard
+                self.writer.add_scalar(tag="SAE Train Loss",
+                                       scalar_value=sdae_loss.item(),
+                                       global_step=epoch * len(self.train_dataloader) + index)
+
             if update_freq is not None and epoch % update_freq == 0:
                 if validation_loader is not None:
                     validation_output = self.predict(
@@ -209,10 +209,7 @@ class Trainer():
                 activation=torch.nn.ReLU()
                 if index != (number_of_subautoencoders - 1)
                 else None,
-                corruption=nn.Dropout(corruption) if corruption is not None else None,
-            )
-            if cuda:
-                sub_autoencoder = sub_autoencoder.cuda()
+                corruption=nn.Dropout(corruption) if corruption is not None else None).to(self.args.device)
             ae_optimizer = optimizer(sub_autoencoder)
             ae_scheduler = scheduler(ae_optimizer) if scheduler is not None else scheduler
             self.train(
@@ -300,3 +297,41 @@ class Trainer():
                 output.detach().cpu()
             )  # move to the CPU to prevent out of memory on the GPU
         return torch.cat(features)
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("--train_input_file",
+                        type=str,
+                        default=os.path.join(DATA_DIR, 'dataset/train_file.pt'),
+                        help="Path of the train dataset.")
+    parser.add_argument("--train_label_file",
+                        type=str,
+                        default=os.path.join(DATA_DIR, 'LabelTrain.csv'),
+                        help="Path of the train label file.")
+    parser.add_argument("--validation_input_file",
+                        type=str,
+                        default=os.path.join(DATA_DIR, 'dataset/validate_file.pt'),
+                        help="Path of the validation dataset.")
+    parser.add_argument("--validation_label_file",
+                        type=str,
+                        default=os.path.join(DATA_DIR, 'LabelValidation.csv'),
+                        help="Path of the validation label file.")
+    parser.add_argument("--visualization_dir",
+                        type=str,
+                        default=VISUALIZATION_DIR,
+                        help="Output for visualization.")
+    parser.add_argument("--device",
+                        type=str,
+                        default="cuda" if torch.cuda.is_available() else "cpu",
+                        help="Device (cuda or cpu)")
+    parser.add_argument("--log_path", type=str, default=LOG_DIR, help="Path of the log.")
+    parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
+    parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed.")
+    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument("--num_workers", type=int, default=2, help="Number of subprocesses for data loading.")
+    parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
+    args = parser.parse_args()
+    trainer = Trainer(args=args)
+
