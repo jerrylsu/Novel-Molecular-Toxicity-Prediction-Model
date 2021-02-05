@@ -152,7 +152,6 @@ class Trainer(object):
                     epo=epoch, lss="%.6f" % loss_value, vls="%.6f" % validation_loss_value,
                 )
                 # for tensorboard
-                if autoencoder.
                 self.writer.add_scalar(tag="SDAE Train Loss",
                                        scalar_value=loss_value,
                                        global_step=epoch * len(dataloader) + index)
