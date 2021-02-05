@@ -1,6 +1,7 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 import sys
+sys.path.append(os.path.dirname(os.getcwd()))
 from typing import Any, Callable, Optional, Mapping
 import torch
 import torch.nn.functional as F
@@ -16,7 +17,6 @@ from torch.utils.tensorboard import SummaryWriter
 from src.models.sdae_model import AutoencoderLayer, StackedAutoEncoderModel
 from src.models.classifier_model import ClassifierModel
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
-sys.path.append(os.path.dirname(os.getcwd()))
 
 PROJECT_DIR = os.path.dirname(os.getcwd())  # get current working directory
 DATA_DIR = os.path.join(PROJECT_DIR, 'data')
