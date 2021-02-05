@@ -149,6 +149,13 @@ class Trainer(object):
                 data_iterator.set_postfix(
                     epo=epoch, lss="%.6f" % loss_value, vls="%.6f" % validation_loss_value,
                 )
+                # for tensorboard
+                self.writer.add_scalar(tag="SDAE Train Loss",
+                                       scalar_value=loss_value,
+                                       global_step=epoch * len(dataloader) + index)
+                self.writer.add_scalar(tag="SDAE Val Loss",
+                                       scalar_value=validation_loss_value,
+                                       global_step=epoch * len(validation_dataset) + index)
             if update_freq is not None and epoch % update_freq == 0:
                 if validation_loader is not None:
                     validation_output = self.predict(
