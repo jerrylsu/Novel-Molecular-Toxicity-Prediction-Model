@@ -152,6 +152,7 @@ class Trainer(object):
                     epo=epoch, lss="%.6f" % loss_value, vls="%.6f" % validation_loss_value,
                 )
                 # for tensorboard
+                if autoencoder.
                 self.writer.add_scalar(tag="SDAE Train Loss",
                                        scalar_value=loss_value,
                                        global_step=epoch * len(dataloader) + index)
@@ -465,8 +466,8 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--pretrain_epochs", type=int, default=10, help="Number of training epochs")
-    parser.add_argument("--finetune_epochs", type=int, default=10, help="Number of training epochs")
+    parser.add_argument("--pretrain_epochs", type=int, default=1, help="Number of training epochs")
+    parser.add_argument("--finetune_epochs", type=int, default=5, help="Number of training epochs")
     parser.add_argument("--classifier_epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
