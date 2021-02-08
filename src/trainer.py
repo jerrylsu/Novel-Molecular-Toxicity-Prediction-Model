@@ -505,17 +505,17 @@ if __name__ == "__main__":
     )
     print("Training stage.")
     ae_optimizer = SGD(params=sdae_model.parameters(), lr=0.1, momentum=0.9)
-    #trainer.train_sdae_model(
-    #    train_dataset,
-    #    sdae_model,
-    #    validation=validation_dataset,
-    #    epochs=args.finetune_epochs,
-    #    batch_size=args.batch_size,
-    #    optimizer=ae_optimizer,
-    #    scheduler=StepLR(ae_optimizer, 100, gamma=0.1),
-    #    corruption=0.2,
-    #    update_callback=trainer.training_callback,
-    #)
+    trainer.train_sdae_model(
+        train_dataset,
+        sdae_model,
+        validation=validation_dataset,
+        epochs=args.finetune_epochs,
+        batch_size=args.batch_size,
+        optimizer=ae_optimizer,
+        scheduler=StepLR(ae_optimizer, 100, gamma=0.1),
+        corruption=0.2,
+        update_callback=trainer.training_callback,
+    )
     print("Classifier stage.")
     trainer.train_classifier(
         train_dataset,
