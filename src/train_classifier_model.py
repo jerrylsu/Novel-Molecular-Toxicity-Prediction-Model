@@ -2,17 +2,14 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = '4'
 import sys
 import torch
-from torch import nn
 import time
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from argparse import ArgumentParser
-from torch.autograd import Variable
 import numpy as np
 from typing import Mapping
 sys.path.append(os.path.dirname(os.getcwd()))
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
-from src.models.model import StackedAutoEncoderModel, ClassifierLayer
 from src.models.classifier_model import ClassifierModel
 from src.utils.utils import custom_collate_fn
 
@@ -36,11 +33,9 @@ class Trainer:
         self.train_total, self.validation_total = len(self.train_dataset), len(self.validation_dataset)
         self.train_input_size = next(iter(self.train_dataloader))["input_ids"].shape[1]
         self.validation_input_size = next(iter(self.validation_dataloader))["input_ids"].shape[1]
-        self.sdae_model = StackedAutoEncoderModel(input_size=self.train_input_size, output_size=128).to(self.args.device)
         self.classifier_model = ClassifierModel(input_size=self.train_input_size).to(self.args.device)
-        self.classifier_layer = ClassifierLayer().to(self.args.device)
         self.writer = SummaryWriter(self.args.log_path)
-        self.writer.add_graph(model=self.sdae_model,
+        self.writer.add_graph(model=self.classifier_model,
                               input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
         pass
 
@@ -58,8 +53,6 @@ class Trainer:
         torch.save(visualization, os.path.join(self.args.visualization_dir, "visualization.bin"))
 
     def eval(self, epoch):
-        self.sdae_model.eval()
-        self.classifier_layer.eval()
         self.classifier_model.eval()
         correct = 0
         validation_classifier_epoch_data, validation_labels = [], []
@@ -67,24 +60,14 @@ class Trainer:
             batch = {key: value.to(self.args.device) for key, value in batch.items()}
             input_ids, label = batch["input_ids"], batch["label"]
             with torch.no_grad():
-                # SDAE model
-                sdae_output = self.sdae_model(input_ids)
-                encoded, decoded = sdae_output[0].detach(), sdae_output[1]
-                encoded = encoded.view(encoded.size(0), -1)
-                label = label.view(-1)
-                prediction = self.classifier_layer(encoded)
-                classifier_layer_loss = self.classifier_layer.criterion(prediction, label)
-
                 # Single classifier model
-                #prediction = self.classifier_model(input_ids)
-                #classifier_model_loss = self.classifier_model.criterion(prediction, label)
+                prediction = self.classifier_model(input_ids)
+                classifier_model_loss = self.classifier_model.criterion(prediction, label)
                 # for tensorboard
-                #self.writer.add_scalar(tag="ClassifierModel Validation Loss",
-                #                       scalar_value=classifier_model_loss.item(),
-                #                       global_step=epoch * len(self.validation_dataloader) + i)
-                self.writer.add_scalar(tag="ClassifierLayer Validation Loss",
-                                       scalar_value=classifier_layer_loss.item(),
+                self.writer.add_scalar(tag="ClassifierModel Validation Loss",
+                                       scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.validation_dataloader) + i)
+
                 # for visualization
                 validation_classifier_epoch_data.append(prediction.detach())
                 validation_labels.append(label)
@@ -98,50 +81,28 @@ class Trainer:
         self.set_seed(self.args.seed)
         visualization_data = {}
         for epoch in range(self.args.epochs):
-            #if epoch % 10 == 0:
-            #    Test the quality of our features with a randomly initialzed linear classifier.
-            #    self.classifier_layer = ClassifierLayer().to(self.args.device)
-
-            self.sdae_model.train()
             self.classifier_model.train()
-            self.classifier_layer.train()
             start_time = time.time()
             correct = 0
-            sdae_epoch_data, train_classifier_epoch_data, train_labels = [], [], []
+            train_classifier_epoch_data, train_labels = [], [], []
             for i, batch in enumerate(tqdm(self.train_dataloader, desc=f"Epoch {epoch}: ")):
                 batch = {key: value.to(self.args.device) for key, value in batch.items()}
                 input_ids, label = batch["input_ids"], batch["label"]
                 label = label.view(-1)
 
-                # SDAE model
-                sdae_outputs = self.sdae_model(input_ids)
-                sdae_encoded, sae_loss = sdae_outputs[0], sdae_outputs[1]
-                sdae_encoded = sdae_encoded.view(sdae_encoded.size(0), -1)
-                prediction = self.classifier_layer(sdae_encoded)
-                classifier_layer_loss = self.classifier_layer.criterion(prediction, label)
-                self.classifier_layer.optimizer.zero_grad()
-                classifier_layer_loss.backward()
-                self.classifier_layer.optimizer.step()
-
                 # Single classifier model
-                #prediction = self.classifier_model(input_ids)
-                #classifier_model_loss = self.classifier_model.criterion(prediction, label)
-                #self.classifier_model.optimizer.zero_grad()
-                #classifier_model_loss.backward()
-                #self.classifier_model.optimizer.step()
+                prediction = self.classifier_model(input_ids)
+                classifier_model_loss = self.classifier_model.criterion(prediction, label)
+                self.classifier_model.optimizer.zero_grad()
+                classifier_model_loss.backward()
+                self.classifier_model.optimizer.step()
 
                 # for tensorboard
-                #self.writer.add_scalar(tag="ClassifierModel Train Loss",
-                #                       scalar_value=classifier_model_loss.item(),
-                #                       global_step=epoch * len(self.train_dataloader) + i)
-                self.writer.add_scalar(tag="ClassifierLayer Train Loss",
-                                       scalar_value=classifier_layer_loss.item(),
+                self.writer.add_scalar(tag="ClassifierModel Train Loss",
+                                       scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.train_dataloader) + i)
-                self.writer.add_scalar(tag="SAE Train Loss",
-                                       scalar_value=sae_loss.item(),
-                                       global_step=epoch * len(self.train_dataloader) + i)
+
                 # for visualization
-                sdae_epoch_data.append(sdae_encoded.detach())
                 train_classifier_epoch_data.append(prediction.detach())
                 train_labels.append(label)
                 # for metrics
@@ -149,8 +110,7 @@ class Trainer:
                 correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
             train_accuracy = f"Accuracy of train epoch {epoch}: {round(correct / self.train_total, 4)}"
             validation_accuracy, validation_classifier_epoch_data, validation_labels = self.eval(epoch=epoch)
-            visualization_data[f"epoch{epoch}"] = {"sdae": torch.cat(sdae_epoch_data, dim=0).cpu().numpy(),
-                                                   "train_classifier": torch.cat(train_classifier_epoch_data, dim=0).cpu().numpy(),
+            visualization_data[f"epoch{epoch}"] = {"train_classifier": torch.cat(train_classifier_epoch_data, dim=0).cpu().numpy(),
                                                    "train_labels": torch.cat(train_labels, dim=0).cpu().numpy(),
                                                    "train_accuracy": train_accuracy,
                                                    "validation_classifier": torch.cat(validation_classifier_epoch_data, dim=0).cpu().numpy(),

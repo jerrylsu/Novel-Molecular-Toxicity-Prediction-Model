@@ -41,16 +41,16 @@ if __name__ == "__main__":
     """Single classifier: validation best epoch = epoch1"""
 
     # sdae softmax best
-    # vis = torch.load("../../data/visualization/visualization_sdae_softmax-3-3-10.bin")
-    # predicts, labels = vis["epoch9"]["validation_classifier"], vis["epoch9"]["validation_labels"]
+    vis = torch.load("../../data/visualization/visualization.bin")
+    predicts, labels = vis["epoch9"]["validation_classifier"], vis["epoch9"]["validation_labels"]
 
     # single softmax best
     # vis = torch.load("../../data/visualization/visualization_single_softmax.bin")
     # predicts, labels = vis["epoch6"]["validation_classifier"], vis["epoch6"]["validation_labels"]
 
     # dnn softmax best
-    vis = torch.load("../../data/visualization/visualization_dnn_softmax.bin")
-    predicts, labels = vis["epoch1"]["validation_classifier"], vis["epoch1"]["validation_labels"]
+    # vis = torch.load("../../data/visualization/visualization_dnn_softmax.bin")
+    # predicts, labels = vis["epoch1"]["validation_classifier"], vis["epoch1"]["validation_labels"]
 
     plot_2d(predicts, labels)
     pass

@@ -465,8 +465,8 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--pretrain_epochs", type=int, default=1, help="Number of training epochs")
-    parser.add_argument("--finetune_epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument("--pretrain_epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--finetune_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--classifier_epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
@@ -499,17 +499,17 @@ if __name__ == "__main__":
     )
     print("Training stage.")
     ae_optimizer = SGD(params=sdae_model.parameters(), lr=0.1, momentum=0.9)
-    trainer.train_sdae_model(
-        train_dataset,
-        sdae_model,
-        validation=validation_dataset,
-        epochs=args.finetune_epochs,
-        batch_size=args.batch_size,
-        optimizer=ae_optimizer,
-        scheduler=StepLR(ae_optimizer, 100, gamma=0.1),
-        corruption=0.2,
-        update_callback=trainer.training_callback,
-    )
+    #trainer.train_sdae_model(
+    #    train_dataset,
+    #    sdae_model,
+    #    validation=validation_dataset,
+    #    epochs=args.finetune_epochs,
+    #    batch_size=args.batch_size,
+    #    optimizer=ae_optimizer,
+    #    scheduler=StepLR(ae_optimizer, 100, gamma=0.1),
+    #    corruption=0.2,
+    #    update_callback=trainer.training_callback,
+    #)
     print("Classifier stage.")
     trainer.train_classifier(
         train_dataset,
@@ -518,5 +518,3 @@ if __name__ == "__main__":
         validation=validation_dataset
     )
     pass
-
-
