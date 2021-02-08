@@ -393,15 +393,15 @@ class Trainer(object):
             predictions = torch.cat(predictions, dim=0).cpu().numpy()
             labels = torch.cat(labels, dim=0).cpu().numpy()
             train_accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-            validation_accuracy, validation_classifier_epoch_data, validation_labels = self.eval_classifier(epoch=epoch,
+            validation_accuracy, validation_predictions_vis, validation_labels = self.eval_classifier(epoch=epoch,
                                                                                                             autoencoder=autoencoder,
                                                                                                             batch_size=batch_size,
                                                                                                             validation=validation)
             visualization_data[f"epoch{epoch}"] = {"train_classifier": predictions_vis,
                                                    "train_labels": labels,
                                                    "train_accuracy": train_accuracy,
-                                                   "validation_classifier": torch.cat(validation_classifier_epoch_data, dim=0).cpu().numpy(),
-                                                   "validation_labels": torch.cat(validation_labels, dim=0).cpu().numpy(),
+                                                   "validation_classifier": validation_predictions_vis,
+                                                   "validation_labels": validation_labels,
                                                    "validation_accuracy": validation_accuracy}
         # save for visualization
         self.to_serialization(visualization_data)
