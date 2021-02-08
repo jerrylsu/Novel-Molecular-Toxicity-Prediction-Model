@@ -1,26 +1,30 @@
-# Stacked-AutoEncoder-Model
+## Novel Molecular Toxicity Prediction Model
 
-27127
+Novel molecular toxicity prediction model based on Softmax / Deep Neural Network / Stacked-Autoencoder.
 
-### exp1
+### Softmax
 
-visualization_exp1.bin
-```
-self.ae1 = LDAutoEncoderLayer(input_size, 6000) # 27127
-self.ae2 = LDAutoEncoderLayer(6000, 3000)
-self.ae3 = LDAutoEncoderLayer(3000, 1500)
-self.ae4 = LDAutoEncoderLayer(1500, 750)
-self.ae5 = LDAutoEncoderLayer(750, 375)
-self.ae6 = LDAutoEncoderLayer(375, output_size) # 3
-```
+- loss
 
-visualization_exp1.bin
-```
-self.ae1 = LDAutoEncoderLayer(input_size, 512) # 27127
-self.ae2 = LDAutoEncoderLayer(512, 256)
-self.ae3 = LDAutoEncoderLayer(256, output_size) # 3
-```
+![loss](data/results/softmax/loss.png)
 
-### References
+- validationset classification
 
-https://github.com/Dierme/latent-gan
+![validationset](data/results/softmax/validation_best.png)
+
+### Deep Neural Network
+
+-loss
+
+![loss](data/results/deep_neural_network/loss.jpeg)
+
+- trainset classification
+
+![tainset](data/results/deep_neural_network/train_epoch4.png)
+
+- validationset classification
+
+![validationset](data/results/deep_neural_network/validation_best.png)
+
+### Stacked Autoencoder
+
