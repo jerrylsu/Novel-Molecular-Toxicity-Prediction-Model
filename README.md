@@ -2,7 +2,7 @@
 
 Novel molecular toxicity prediction model based on Softmax / Deep Neural Network / Stacked-Autoencoder.
 
-### Softmax Model
+### 1. Softmax Model
 
 - loss
 
@@ -12,7 +12,7 @@ Novel molecular toxicity prediction model based on Softmax / Deep Neural Network
 
 ![validationset](https://github.com/jerrylsu/Novel-Molecular-Toxicity-Prediction-Model/blob/master/data/results/softmax/validation_best.png)
 
-### Deep Neural Network Model
+### 2. Deep Neural Network Model
 
 -loss
 
@@ -26,5 +26,5 @@ Novel molecular toxicity prediction model based on Softmax / Deep Neural Network
 
 ![validationset](https://github.com/jerrylsu/Novel-Molecular-Toxicity-Prediction-Model/blob/master/data/results/deep_neural_network/validation_best.png)
 
-### Stacked Autoencoder
+### 3. Stacked Autoencoder
 
