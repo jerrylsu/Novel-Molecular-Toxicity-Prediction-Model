@@ -432,7 +432,7 @@ class Trainer(object):
                 predictions_vis.append(prediction.detach())
                 labels.append(label)
                 # for metric
-                pred = prediction.data.max(1, keepdim=True)[1]
+                prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
         predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
         predictions = torch.cat(predictions, dim=0).cpu().numpy()
