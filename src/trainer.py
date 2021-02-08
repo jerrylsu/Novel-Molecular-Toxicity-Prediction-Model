@@ -365,7 +365,6 @@ class Trainer(object):
         autoencoder.eval()
         for epoch in range(self.args.classifier_epochs):
             self.classifier_model.train()
-            correct = 0
             predictions_vis, predictions, labels = [], [], []
             for i, batch in enumerate(tqdm(dataloader, desc=f"Epoch {epoch}: ")):
                 batch = {key: value.to(self.args.device) for key, value in batch.items()}
@@ -416,8 +415,7 @@ class Trainer(object):
         dataloader = DataLoader(
             validation, batch_size=batch_size, pin_memory=False, shuffle=False
         )
-        correct = 0
-        validation_classifier_epoch_data, validation_labels = [], []
+        predictions_vis, predictions, labels = [], [], []
         for i, batch in enumerate(tqdm(dataloader, desc=f"Eval: ")):
             batch = {key: value.to(self.args.device) for key, value in batch.items()}
             input_ids, label = batch["input_ids"], batch["label"]
@@ -431,13 +429,16 @@ class Trainer(object):
                                        scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(dataloader) + i)
                 # for visualization
-                validation_classifier_epoch_data.append(prediction.detach())
-                validation_labels.append(label)
+                predictions_vis.append(prediction.detach())
+                labels.append(label)
                 # for metric
                 pred = prediction.data.max(1, keepdim=True)[1]
-                correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
-        accuracy = f"Accuracy of validation epoch {epoch}: {round(correct / len(dataloader), 4)}"
-        return accuracy, validation_classifier_epoch_data, validation_labels
+                predictions.append(prediction)
+        predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
+        predictions = torch.cat(predictions, dim=0).cpu().numpy()
+        labels = torch.cat(labels, dim=0).cpu().numpy()
+        validation_accuracy = f"Accuracy of validation epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
+        return validation_accuracy, predictions_vis, labels
 
 
 if __name__ == "__main__":
@@ -470,7 +471,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--pretrain_epochs", type=int, default=1, help="Number of training epochs")
+    parser.add_argument("--pretrain_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--finetune_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--classifier_epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
