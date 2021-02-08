@@ -13,6 +13,7 @@ from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 from src.utils.utils import custom_collate_fn
+from src.utils.metrics import Metrics
 from torch.utils.tensorboard import SummaryWriter
 from src.models.sdae_model import AutoencoderLayer, StackedAutoEncoderModel
 from src.models.classifier_model import ClassifierModel
@@ -27,6 +28,7 @@ LOG_DIR = os.path.join(PROJECT_DIR, 'log')
 class Trainer(object):
     def __init__(self, args):
         self.args = args
+        self.metrics = Metrics()
         #self.train_dataset = CSFPDataset(self.args.train_input_file)
         #self.validation_dataset = CSFPDataset(self.args.validation_input_file)
         #self.train_dataloader, self.validation_dataloader = get_dataloader(train_dataset=self.train_dataset,
@@ -364,7 +366,7 @@ class Trainer(object):
         for epoch in range(self.args.classifier_epochs):
             self.classifier_model.train()
             correct = 0
-            sdae_epoch_data, train_classifier_epoch_data, train_labels = [], [], []
+            predictions, labels = [], []
             for i, batch in enumerate(tqdm(dataloader, desc=f"Epoch {epoch}: ")):
                 batch = {key: value.to(self.args.device) for key, value in batch.items()}
                 input_ids, label = batch["input_ids"], batch["label"].view(-1)
@@ -383,19 +385,22 @@ class Trainer(object):
                                        scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(dataloader) + i)
                 # for visualization
-                train_classifier_epoch_data.append(prediction.detach())
-                train_labels.append(label)
+                predictions.append(prediction.detach())
+                labels.append(label)
                 # for metrics
-                pred = prediction.data.max(1, keepdim=True)[1]
-                correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
-            train_accuracy = f"Accuracy of train epoch {epoch}: {round(correct / len(dataloader), 4)}"
+                prediction = prediction.data.max(1, keepdim=True)[1]
+                predictions.append(prediction)
+                labels.append(label)
+            predictions = torch.cat(predictions, dim=0).cpu().numpy()
+            labels = torch.cat(labels, dim=0).cpu().numpy()
+            accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
             validation_accuracy, validation_classifier_epoch_data, validation_labels = self.eval_classifier(epoch=epoch,
                                                                                                             autoencoder=autoencoder,
                                                                                                             batch_size=batch_size,
                                                                                                             validation=validation)
-            visualization_data[f"epoch{epoch}"] = {"train_classifier": torch.cat(train_classifier_epoch_data, dim=0).cpu().numpy(),
-                                                   "train_labels": torch.cat(train_labels, dim=0).cpu().numpy(),
-                                                   "train_accuracy": train_accuracy,
+            visualization_data[f"epoch{epoch}"] = {"train_classifier": predictions,
+                                                   "train_labels": labels,
+                                                   "train_accuracy": accuracy,
                                                    "validation_classifier": torch.cat(validation_classifier_epoch_data, dim=0).cpu().numpy(),
                                                    "validation_labels": torch.cat(validation_labels, dim=0).cpu().numpy(),
                                                    "validation_accuracy": validation_accuracy}
@@ -465,7 +470,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--pretrain_epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--pretrain_epochs", type=int, default=1, help="Number of training epochs")
     parser.add_argument("--finetune_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--classifier_epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
