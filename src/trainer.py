@@ -63,7 +63,7 @@ class Trainer(object):
     def to_serialization(self, visualization: Mapping):
         if not os.path.exists(self.args.visualization_dir):
             os.mkdir(self.args.visualization_dir)
-        torch.save(visualization, os.path.join(self.args.visualization_dir, "visualization.bin"))
+        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_sdae-{self.args.pretrain_epochs}-{self.args.finetune_epochs}-{self.args.classifier_epochs}.bin"))
 
     def train_sdae_model(
             self,
@@ -159,7 +159,7 @@ class Trainer(object):
                                        global_step=epoch * len(dataloader) + index)
                 self.writer.add_scalar(tag="SDAE Val Loss",
                                        scalar_value=validation_loss_value,
-                                       global_step=epoch * len(validation_dataset) + index)
+                                       global_step=epoch * len(validation_loader) + index)
             if update_freq is not None and epoch % update_freq == 0:
                 if validation_loader is not None:
                     validation_output = self.predict(
@@ -320,7 +320,6 @@ class Trainer(object):
         :param dataset: evaluation Dataset
         :param model: autoencoder for prediction
         :param batch_size: batch size
-        :param cuda: whether CUDA is used, defaults to True
         :param silent: set to True to prevent printing out summary statistics, defaults to False
         :param encode: whether to encode or use the full autoencoder
         :return: predicted features from the Dataset
@@ -387,16 +386,16 @@ class Trainer(object):
                 predictions_vis.append(prediction.detach())
                 labels.append(label)
                 # for metrics
-                prediction = prediction.data.max(1, keepdim=True)[1]
+                prediction = prediction.data.max(1, keepdim=True)[1].view(-1)
                 predictions.append(prediction)
             predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
             predictions = torch.cat(predictions, dim=0).cpu().numpy()
             labels = torch.cat(labels, dim=0).cpu().numpy()
             train_accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
             validation_accuracy, validation_predictions_vis, validation_labels = self.eval_classifier(epoch=epoch,
-                                                                                                            autoencoder=autoencoder,
-                                                                                                            batch_size=batch_size,
-                                                                                                            validation=validation)
+                                                                                                      autoencoder=autoencoder,
+                                                                                                      batch_size=batch_size,
+                                                                                                      validation=validation)
             visualization_data[f"epoch{epoch}"] = {"train_classifier": predictions_vis,
                                                    "train_labels": labels,
                                                    "train_accuracy": train_accuracy,
@@ -473,7 +472,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--pretrain_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--finetune_epochs", type=int, default=3, help="Number of training epochs")
-    parser.add_argument("--classifier_epochs", type=int, default=10, help="Number of training epochs")
+    parser.add_argument("--classifier_epochs", type=int, default=20, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
     args = parser.parse_args()
@@ -489,7 +488,7 @@ if __name__ == "__main__":
     train_total, validation_total = len(train_dataset), len(validation_dataset)
     train_input_size = next(iter(train_dataloader))["input_ids"].shape[1]
     validation_input_size = next(iter(validation_dataloader))["input_ids"].shape[1]
-    sdae_model = StackedAutoEncoderModel(dimensions=[train_input_size, 2048, 1024, 512, 256, 128],
+    sdae_model = StackedAutoEncoderModel(dimensions=[train_input_size, 1024, 512, 256, 128],
                                          final_activation=None).to(args.device)
     trainer = Trainer(args=args)
     print("Pretraining stage.")

@@ -6,8 +6,8 @@ class Metrics(object):
     def __init__(self):
         pass
 
-    def calculate_accuracy(self, y_true: List, y_pred: List, normalize: bool=True):
-        return metrics.accuracy_score(y_true, y_pred, normalize)
+    def calculate_accuracy(self, y_true: List, y_pred: List):
+        return metrics.accuracy_score(y_true, y_pred, normalize=True)
 
     def calculate_auc(self, y_true: List, y_pred: List):
         fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)

@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 import numpy as np
 from typing import Mapping
 sys.path.append(os.path.dirname(os.getcwd()))
+from src.utils.metrics import Metrics
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
 from src.models.classifier_model import ClassifierModel
 from src.utils.utils import custom_collate_fn
@@ -22,6 +23,7 @@ LOG_DIR = os.path.join(PROJECT_DIR, 'log')
 class Trainer:
     def __init__(self, args):
         self.args = args
+        self.metrics = Metrics()
         self.train_dataset = CSFPDataset(self.args.train_input_file)
         self.validation_dataset = CSFPDataset(self.args.validation_input_file)
         self.train_dataloader, self.validation_dataloader = get_dataloader(train_dataset=self.train_dataset,
@@ -54,8 +56,7 @@ class Trainer:
 
     def eval(self, epoch):
         self.classifier_model.eval()
-        correct = 0
-        validation_classifier_epoch_data, validation_labels = [], []
+        predictions_vis, predictions, labels = [], [], []
         for i, batch in enumerate(tqdm(self.validation_dataloader, desc=f"Eval: ")):
             batch = {key: value.to(self.args.device) for key, value in batch.items()}
             input_ids, label = batch["input_ids"], batch["label"]
@@ -67,15 +68,17 @@ class Trainer:
                 self.writer.add_scalar(tag="ClassifierModel Validation Loss",
                                        scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.validation_dataloader) + i)
-
                 # for visualization
-                validation_classifier_epoch_data.append(prediction.detach())
-                validation_labels.append(label)
+                predictions_vis.append(prediction.detach())
+                labels.append(label)
                 # for metric
-                pred = prediction.data.max(1, keepdim=True)[1]
-                correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
-        accuracy = f"Accuracy of validation epoch {epoch}: {round(correct / self.validation_total, 4)}"
-        return accuracy, validation_classifier_epoch_data, validation_labels
+                prediction = prediction.data.max(1, keepdim=True)[1]
+                predictions.append(prediction)
+        predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
+        predictions = torch.cat(predictions, dim=0).cpu().numpy()
+        labels = torch.cat(labels, dim=0).cpu().numpy()
+        validation_accuracy = f"Accuracy of validation epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
+        return validation_accuracy, predictions_vis, labels
 
     def train(self):
         self.set_seed(self.args.seed)
@@ -83,8 +86,7 @@ class Trainer:
         for epoch in range(self.args.epochs):
             self.classifier_model.train()
             start_time = time.time()
-            correct = 0
-            train_classifier_epoch_data, train_labels = [], [], []
+            predictions_vis, predictions, labels = [], [], []
             for i, batch in enumerate(tqdm(self.train_dataloader, desc=f"Epoch {epoch}: ")):
                 batch = {key: value.to(self.args.device) for key, value in batch.items()}
                 input_ids, label = batch["input_ids"], batch["label"]
@@ -101,21 +103,24 @@ class Trainer:
                 self.writer.add_scalar(tag="ClassifierModel Train Loss",
                                        scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.train_dataloader) + i)
-
                 # for visualization
-                train_classifier_epoch_data.append(prediction.detach())
-                train_labels.append(label)
+                predictions_vis.append(prediction.detach())
+                labels.append(label)
                 # for metrics
-                pred = prediction.data.max(1, keepdim=True)[1]
-                correct += pred.eq(label.data.view_as(pred)).cpu().numpy().sum()
-            train_accuracy = f"Accuracy of train epoch {epoch}: {round(correct / self.train_total, 4)}"
-            validation_accuracy, validation_classifier_epoch_data, validation_labels = self.eval(epoch=epoch)
-            visualization_data[f"epoch{epoch}"] = {"train_classifier": torch.cat(train_classifier_epoch_data, dim=0).cpu().numpy(),
-                                                   "train_labels": torch.cat(train_labels, dim=0).cpu().numpy(),
+                prediction = prediction.data.max(1, keepdim=True)[1]
+                predictions.append(prediction)
+            predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
+            predictions = torch.cat(predictions, dim=0).cpu().numpy()
+            labels = torch.cat(labels, dim=0).cpu().numpy()
+            train_accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
+            validation_accuracy, validation_predictions_vis, validation_labels = self.eval(epoch=epoch)
+            visualization_data[f"epoch{epoch}"] = {"train_classifier": predictions_vis,
+                                                   "train_labels": labels,
                                                    "train_accuracy": train_accuracy,
-                                                   "validation_classifier": torch.cat(validation_classifier_epoch_data, dim=0).cpu().numpy(),
-                                                   "validation_labels": torch.cat(validation_labels, dim=0).cpu().numpy(),
+                                                   "validation_classifier": validation_predictions_vis,
+                                                   "validation_labels": validation_labels,
                                                    "validation_accuracy": validation_accuracy}
+
             total_time = time.time() - start_time
         # save for visualization
         self.to_serialization(visualization_data)
