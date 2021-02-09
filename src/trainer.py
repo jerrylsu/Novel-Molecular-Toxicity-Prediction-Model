@@ -478,7 +478,7 @@ if __name__ == "__main__":
     parser.add_argument("--pretrain_epochs", type=int, default=300, help="Number of training epochs")
     parser.add_argument("--finetune_epochs", type=int, default=500, help="Number of training epochs")
     parser.add_argument("--classifier_epochs", type=int, default=20, help="Number of training epochs")
-    parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
+    parser.add_argument("--num_workers", type=int, default=2, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
     args = parser.parse_args()
 
