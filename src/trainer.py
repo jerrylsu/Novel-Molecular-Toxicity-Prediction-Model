@@ -21,6 +21,7 @@ from src.featurizers.featurizer import CSFPDataset, get_dataloader
 
 PROJECT_DIR = os.path.dirname(os.getcwd())  # get current working directory
 DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+MODEL_DIR = os.path.join(PROJECT_DIR, 'model')
 VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization')
 LOG_DIR = os.path.join(PROJECT_DIR, 'log')
 
@@ -462,6 +463,10 @@ if __name__ == "__main__":
                         type=str,
                         default=VISUALIZATION_DIR,
                         help="Output for visualization.")
+    parser.add_argument("--model_dir",
+                        type=str,
+                        default=MODEL_DIR,
+                        help="Save sdae model.")
     parser.add_argument("--device",
                         type=str,
                         default="cuda" if torch.cuda.is_available() else "cpu",
@@ -470,8 +475,8 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--pretrain_epochs", type=int, default=3, help="Number of training epochs")
-    parser.add_argument("--finetune_epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--pretrain_epochs", type=int, default=300, help="Number of training epochs")
+    parser.add_argument("--finetune_epochs", type=int, default=500, help="Number of training epochs")
     parser.add_argument("--classifier_epochs", type=int, default=20, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
@@ -515,6 +520,10 @@ if __name__ == "__main__":
         corruption=0.2,
         update_callback=trainer.training_callback,
     )
+    torch.save(sdae_model,
+               os.path.join(args.model_dir,
+                            f"sdae_model-{args.pretrain_epochs}-{args.finetune_epochs}-{args.classifier_epochs}.pt"))
+
     print("Classifier stage.")
     trainer.train_classifier(
         train_dataset,
