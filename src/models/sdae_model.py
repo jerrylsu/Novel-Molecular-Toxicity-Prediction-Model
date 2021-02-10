@@ -51,16 +51,16 @@ class AutoencoderLayer(nn.Module):
         hidden_dimension: int,
         activation: Optional[torch.nn.Module] = nn.ReLU(),
         gain: float = nn.init.calculate_gain("relu"),
-        corruption: Optional[torch.nn.Module] = None,
+        dropout: Optional[torch.nn.Module] = None,
         tied: bool = False,
     ) -> None:
         """
-        Autoencoder composed of two Linear units with optional encoder activation and corruption.
+        Autoencoder composed of two Linear units with optional encoder activation and dropout.
         :param embedding_dimension: embedding dimension, input to the encoder
         :param hidden_dimension: hidden dimension, output of the encoder
         :param activation: optional activation unit, defaults to nn.ReLU()
         :param gain: gain for use in weight initialisation
-        :param corruption: optional unit to apply to corrupt input during training, defaults to None
+        :param dropout: optional unit to apply to corrupt input during training, defaults to None
         :param tied: whether the autoencoder weights are tied, defaults to False
         """
         super(AutoencoderLayer, self).__init__()
@@ -68,29 +68,19 @@ class AutoencoderLayer(nn.Module):
         self.hidden_dimension = hidden_dimension
         self.activation = activation
         self.gain = gain
-        self.corruption = corruption
+        self.dropout = dropout
         # encoder parameters
-        self.encoder_weight = Parameter(
-            torch.Tensor(hidden_dimension, embedding_dimension)
-        )
+        self.encoder_weight = Parameter(torch.Tensor(hidden_dimension, embedding_dimension))
         self.encoder_bias = Parameter(torch.Tensor(hidden_dimension))
         self._initialise_weight_bias(self.encoder_weight, self.encoder_bias, self.gain)
         # decoder parameters
-        self._decoder_weight = (
-            Parameter(torch.Tensor(embedding_dimension, hidden_dimension))
-            if not tied
-            else None
-        )
+        self._decoder_weight = (Parameter(torch.Tensor(embedding_dimension, hidden_dimension)) if not tied else None)
         self.decoder_bias = Parameter(torch.Tensor(embedding_dimension))
         self._initialise_weight_bias(self._decoder_weight, self.decoder_bias, self.gain)
 
     @property
     def decoder_weight(self):
-        return (
-            self._decoder_weight
-            if self._decoder_weight is not None
-            else self.encoder_weight.t()
-        )
+        return (self._decoder_weight if self._decoder_weight is not None else self.encoder_weight.t())
 
     @staticmethod
     def _initialise_weight_bias(weight: torch.Tensor, bias: torch.Tensor, gain: float):
@@ -122,8 +112,8 @@ class AutoencoderLayer(nn.Module):
         transformed = F.linear(batch, self.encoder_weight, self.encoder_bias)
         if self.activation is not None:
             transformed = self.activation(transformed)
-        if self.corruption is not None:
-            transformed = self.corruption(transformed)
+        if self.dropout is not None:
+            transformed = self.dropout(transformed)
         return transformed
 
     def decode(self, batch: torch.Tensor) -> torch.Tensor:
@@ -161,16 +151,17 @@ class StackedAutoEncoderModel(nn.Module):
         self.hidden_dimension = dimensions[-1]
         # construct the encoder
         encoder_units = build_units(self.dimensions[:-1], activation)
-        encoder_units.extend(
-            build_units([self.dimensions[-2], self.dimensions[-1]], None)
-        )
+        encoder_units.extend(build_units([self.dimensions[-2], self.dimensions[-1]], None))
         self.encoder = nn.Sequential(*encoder_units)
         # construct the decoder
         decoder_units = build_units(reversed(self.dimensions[1:]), activation)
-        decoder_units.extend(
-            build_units([self.dimensions[1], self.dimensions[0]], final_activation)
-        )
+        decoder_units.extend(build_units([self.dimensions[1], self.dimensions[0]], final_activation))
         self.decoder = nn.Sequential(*decoder_units)
+        # construct the softmax layer
+        self.softmax_layer = nn.Linear(self.dimensions[-1], 2)
+        # loss & optimizer
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
         # initialise the weights and biases in the layers
         for layer in concat([self.encoder, self.decoder]):
             weight_init(layer[0].weight, layer[0].bias, gain)
@@ -183,11 +174,11 @@ class StackedAutoEncoderModel(nn.Module):
         :return: tuple of encoder and decoder units
         """
         if (index > len(self.dimensions) - 2) or (index < 0):
-            raise ValueError(
-                "Requested subautoencoder cannot be constructed, index out of range."
-            )
+            raise ValueError("Requested subautoencoder cannot be constructed, index out of range.")
         return self.encoder[index].linear, self.decoder[-(index + 1)].linear
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         encoded = self.encoder(batch)
-        return self.decoder(encoded)
+        out = self.softmax_layer(encoded)
+        # return self.decoder(encoded)
+        return out
