@@ -134,8 +134,7 @@ class Trainer(object):
                 leave=True,
                 unit="batch",
                 postfix={"epo": epoch, "lss": "%.6f" % 0.0, "vls": "%.6f" % -1, },
-                disable=silent,
-            )
+                disable=silent)
             for index, batch in enumerate(data_iterator):
                 if isinstance(batch, dict):
                     batch = {key: value.to(self.args.device) for key, value in batch.items()}
@@ -156,13 +155,6 @@ class Trainer(object):
                 data_iterator.set_postfix(
                     epo=epoch, lss="%.6f" % loss_value, vls="%.6f" % validation_loss_value,
                 )
-                # for tensorboard
-                self.writer.add_scalar(tag="SDAE Train Loss",
-                                       scalar_value=loss_value,
-                                       global_step=epoch * len(dataloader) + index)
-                self.writer.add_scalar(tag="SDAE Val Loss",
-                                       scalar_value=validation_loss_value,
-                                       global_step=epoch * len(validation_loader) + index)
             if update_freq is not None and epoch % update_freq == 0:
                 if validation_loader is not None:
                     validation_output = self.inference(validation, autoencoder, batch_size, silent=True, encode=False)
@@ -456,7 +448,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--pretrain_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--classifier_epochs", type=int, default=3, help="Number of training epochs")
-    parser.add_argument("--finetune_epochs", type=int, default=10, help="Number of training epochs")
+    parser.add_argument("--finetune_epochs", type=int, default=5, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=2, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
     args = parser.parse_args()

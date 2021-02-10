@@ -39,7 +39,7 @@ if __name__ == "__main__":
     """Single classifier: validation best epoch = epoch1"""
 
     # sdae softmax best
-    vis = torch.load("../../data/visualization/visualization_sdae-p3-c3-f10.bin")
+    vis = torch.load("../../data/visualization/visualization_sdae-p3-c3-f5.bin")
     predicts, labels = vis["epoch9"]["validation_classifier"], vis["epoch9"]["validation_labels"]
 
     # single softmax best
