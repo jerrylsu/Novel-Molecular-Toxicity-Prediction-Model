@@ -498,4 +498,5 @@ if __name__ == "__main__":
                                               epochs=args.finetune_epochs,
                                               train_sdae=True,
                                               validation=validation_dataset)
+    torch.save(sdae_model, os.path.join(args.model_dir, f"sdae_model-p{args.pretrain_epochs}-c{args.classifier_epochs}-f{args.finetune_epochs}.pt"))
     pass
