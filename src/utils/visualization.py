@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     # sdae softmax best
     vis = torch.load("../../data/visualization/visualization_sdae-p3-c3-f5.bin")
-    predicts, labels = vis["epoch9"]["validation_classifier"], vis["epoch9"]["validation_labels"]
+    predicts, labels = vis["epoch1"]["validation_classifier"], vis["epoch1"]["validation_labels"]
 
     # single softmax best
     # vis = torch.load("../../data/visualization/visualization_single_softmax.bin")
