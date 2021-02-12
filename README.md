@@ -7,13 +7,13 @@ Novel molecular toxicity prediction model based on Softmax / Deep Neural Network
 | Softmax Model | 0.9182 / 0.8154 |  |
 | Deep Neural Network Model | 0.9085 / 0.8347 |  |
 | Stacked Autoencoder Model |  |  |
-| Stacked Capsule Model | - |  |
+| Stacked Capsule Network Model | - |  |
 
 ### 1. Softmax Model
 
 - loss
 
-![loss](https://github.com/jerrylsu/Novel-Molecular-Toxicity-Prediction-Model/blob/master/data/results/softmax/loss.png)
+![loss](./data/results/softmax/loss.png)
 
 - validationset classification
 
