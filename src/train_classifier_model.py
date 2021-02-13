@@ -23,6 +23,7 @@ LOG_DIR = os.path.join(PROJECT_DIR, 'log')
 class Trainer:
     def __init__(self, args):
         self.args = args
+        self.set_seed(42)
         self.metrics = Metrics()
         self.train_dataset = CSFPDataset(self.args.train_input_file)
         self.validation_dataset = CSFPDataset(self.args.validation_input_file)
@@ -77,8 +78,12 @@ class Trainer:
         predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
         predictions = torch.cat(predictions, dim=0).cpu().numpy()
         labels = torch.cat(labels, dim=0).cpu().numpy()
+        validation_recall = f"Recall of validation epoch {epoch}: {round(self.metrics.calculate_recall(labels, predictions), 4)}"
+        validation_precision = f"Precision of validation epoch {epoch}: {round(self.metrics.calculate_precision(labels, predictions), 4)}"
+        validation_f1 = f"F1 of validation epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
+        validation_auc = f"Auc of validation epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
         validation_accuracy = f"Accuracy of validation epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-        return validation_accuracy, predictions_vis, labels
+        return validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, predictions_vis, labels
 
     def train(self):
         self.set_seed(self.args.seed)
@@ -112,13 +117,25 @@ class Trainer:
             predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
             predictions = torch.cat(predictions, dim=0).cpu().numpy()
             labels = torch.cat(labels, dim=0).cpu().numpy()
+            train_recall = f"Recall of train epoch {epoch}: {round(self.metrics.calculate_recall(labels, predictions), 4)}"
+            train_precision = f"Precision of train epoch {epoch}: {round(self.metrics.calculate_precision(labels, predictions), 4)}"
+            train_f1 = f"F1 of train epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
+            train_auc = f"Auc of train epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
             train_accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-            validation_accuracy, validation_predictions_vis, validation_labels = self.eval(epoch=epoch)
+            validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, validation_predictions_vis, validation_labels = self.eval(epoch=epoch)
             visualization_data[f"epoch{epoch}"] = {"train_classifier": predictions_vis,
                                                    "train_labels": labels,
+                                                   "train_recall": train_recall,
+                                                   "train_precision": train_precision,
+                                                   "train_f1": train_f1,
+                                                   "train_auc": train_auc,
                                                    "train_accuracy": train_accuracy,
                                                    "validation_classifier": validation_predictions_vis,
                                                    "validation_labels": validation_labels,
+                                                   "validation_recall": validation_recall,
+                                                   "validation_precision": validation_precision,
+                                                   "validation_f1": validation_f1,
+                                                   "validation_auc": validation_auc,
                                                    "validation_accuracy": validation_accuracy}
 
             total_time = time.time() - start_time
