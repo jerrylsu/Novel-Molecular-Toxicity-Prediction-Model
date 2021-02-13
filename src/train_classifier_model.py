@@ -66,7 +66,7 @@ class Trainer:
                 prediction = self.classifier_model(input_ids)
                 classifier_model_loss = self.classifier_model.criterion(prediction, label)
                 # for tensorboard
-                self.writer.add_scalar(tag="ClassifierModel Validation Loss",
+                self.writer.add_scalar(tag="Softmax Model Validation Loss",
                                        scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.validation_dataloader) + i)
                 # for visualization
@@ -105,7 +105,7 @@ class Trainer:
                 self.classifier_model.optimizer.step()
 
                 # for tensorboard
-                self.writer.add_scalar(tag="ClassifierModel Train Loss",
+                self.writer.add_scalar(tag="Softmax Model Train Loss",
                                        scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.train_dataloader) + i)
                 # for visualization
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=2, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
     args = parser.parse_args()
