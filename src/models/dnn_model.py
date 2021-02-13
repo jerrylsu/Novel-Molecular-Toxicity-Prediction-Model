@@ -11,7 +11,7 @@ class DNNModel(nn.Module):
             nn.Linear(input_size, 2048),
             nn.Dropout(0.2),
             nn.LeakyReLU(),
-            nn.Linear(input_size, 1024),
+            nn.Linear(2048, 1024),
             nn.Dropout(0.2),
             nn.LeakyReLU(),
             nn.Linear(1024, 512),
