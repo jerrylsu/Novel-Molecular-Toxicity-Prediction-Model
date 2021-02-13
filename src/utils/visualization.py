@@ -36,19 +36,20 @@ def plot_2d(predicts, labels):
 
 
 if __name__ == "__main__":
-    """Single classifier: validation best epoch = epoch1"""
-
-    # sdae model
-    sdae_vis = torch.load("../../data/visualization/visualization_sdae-p3-c3-f5.bin")
-    predicts, labels = sdae_vis["epoch1"]["validation_classifier"], sdae_vis["epoch1"]["validation_labels"]
+    """Classifier Model: Softmax, DNN, SDAE"""
 
     # softmax model
-    softmax_vis = torch.load("../../data/visualization/visualization_softmax_model.pt")
-    predicts, labels = softmax_vis["epoch6"]["validation_classifier"], softmax_vis["epoch6"]["validation_labels"]
+    softmax_vis = torch.load("../../data/visualization/visualization_Softmax.pt")
+    softmax_predicts, softmax_labels = softmax_vis["epoch4"]["validation_classifier"], softmax_vis["epoch4"]["validation_labels"]
 
     # dnn model
     dnn_vis = torch.load("../../data/visualization/visualization_DNN.pt")
-    predicts, labels = dnn_vis["epoch1"]["validation_classifier"], dnn_vis["epoch1"]["validation_labels"]
+    dnn_predicts, dnn_labels = dnn_vis["epoch1"]["validation_classifier"], dnn_vis["epoch1"]["validation_labels"]
 
-    plot_2d(predicts, labels)
+    # sdae model
+    # sdae_vis = torch.load("../../data/visualization/visualization_sdae-p3-c3-f5.bin")
+    # sdae_predicts, sdae_labels = sdae_vis["epoch1"]["validation_classifier"], sdae_vis["epoch1"]["validation_labels"]
+
+    plot_2d(softmax_predicts, softmax_labels)
+    plot_2d(dnn_predicts, dnn_labels)
     pass

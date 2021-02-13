@@ -68,7 +68,7 @@ class Trainer(object):
     def to_serialization(self, visualization: Mapping):
         if not os.path.exists(self.args.visualization_dir):
             os.mkdir(self.args.visualization_dir)
-        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_sdae-p{self.args.pretrain_epochs}-c{self.args.classifier_epochs}-f{self.args.finetune_epochs}.pt"))
+        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_SDAE-p{self.args.pretrain_epochs}-c{self.args.classifier_epochs}-f{self.args.finetune_epochs}.pt"))
 
     def _pretrain_sdae_layer(self,
                              dataset: torch.utils.data.Dataset,
@@ -363,16 +363,30 @@ class Trainer(object):
                 predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
                 predictions = torch.cat(predictions, dim=0).cpu().numpy()
                 labels = torch.cat(labels, dim=0).cpu().numpy()
+                train_recall = f"Recall of train epoch {epoch}: {round(self.metrics.calculate_recall(labels, predictions), 4)}"
+                train_precision = f"Precision of train epoch {epoch}: {round(self.metrics.calculate_precision(labels, predictions), 4)}"
+                train_f1 = f"F1 of train epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
+                train_auc = f"Auc of train epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
                 train_accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-                validation_accuracy, validation_predictions_vis, validation_labels = self.eval_sdae_model(epoch=epoch,
-                                                                                                          autoencoder=autoencoder,
-                                                                                                          batch_size=batch_size,
-                                                                                                          validation=validation)
+                validation_recall, validation_precision, \
+                validation_f1, validation_auc, validation_accuracy,\
+                validation_predictions_vis, validation_labels = self.eval_sdae_model(epoch=epoch,
+                                                                                     autoencoder=autoencoder,
+                                                                                     batch_size=batch_size,
+                                                                                     validation=validation)
                 visualization_data[f"epoch{epoch}"] = {"train_classifier": predictions_vis,
                                                        "train_labels": labels,
+                                                       "train_recall": train_recall,
+                                                       "train_precision": train_precision,
+                                                       "train_f1": train_f1,
+                                                       "train_auc": train_auc,
                                                        "train_accuracy": train_accuracy,
                                                        "validation_classifier": validation_predictions_vis,
                                                        "validation_labels": validation_labels,
+                                                       "validation_recall": validation_recall,
+                                                       "validation_precision": validation_precision,
+                                                       "validation_f1": validation_f1,
+                                                       "validation_auc": validation_auc,
                                                        "validation_accuracy": validation_accuracy}
         # Copy the weights to sdae model.
         if not train_sdae:
@@ -408,8 +422,12 @@ class Trainer(object):
         predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
         predictions = torch.cat(predictions, dim=0).cpu().numpy()
         labels = torch.cat(labels, dim=0).cpu().numpy()
+        validation_recall = f"Recall of validation epoch {epoch}: {round(self.metrics.calculate_recall(labels, predictions), 4)}"
+        validation_precision = f"Precision of validation epoch {epoch}: {round(self.metrics.calculate_precision(labels, predictions), 4)}"
+        validation_f1 = f"F1 of validation epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
+        validation_auc = f"Auc of validation epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
         validation_accuracy = f"Accuracy of validation epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-        return validation_accuracy, predictions_vis, labels
+        return validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, predictions_vis, labels
 
 
 if __name__ == "__main__":
@@ -464,7 +482,7 @@ if __name__ == "__main__":
     train_total, validation_total = len(train_dataset), len(validation_dataset)
     train_input_size = next(iter(train_dataloader))["input_ids"].shape[1]
     validation_input_size = next(iter(validation_dataloader))["input_ids"].shape[1]
-    sdae_model = StackedAutoEncoderModel(dimensions=[train_input_size, 2048, 1024, 512, 256, 128],
+    sdae_model = StackedAutoEncoderModel(dimensions=[train_input_size, 512, 256, 128],
                                          final_activation=None).to(args.device)
     trainer = Trainer(args=args)
     print("Pretraining sdae layers stage.")
