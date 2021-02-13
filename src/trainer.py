@@ -16,7 +16,7 @@ from src.utils.utils import custom_collate_fn
 from src.utils.metrics import Metrics
 from torch.utils.tensorboard import SummaryWriter
 from src.models.sdae_model import AutoencoderLayer, StackedAutoEncoderModel
-from src.models.classifier_model import ClassifierModel
+from src.models.softmax_model import SoftmaxModel
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
 
 PROJECT_DIR = os.path.dirname(os.getcwd())  # get current working directory
@@ -46,7 +46,7 @@ class Trainer(object):
         #self.train_input_size = next(iter(self.train_dataloader))["input_ids"].shape[1]
         #self.validation_input_size = next(iter(self.validation_dataloader))["input_ids"].shape[1]
         #self.sdae_model = StackedAutoEncoderModel(dimensions=[self.train_input_size, 2048, 1024, 512, 256, 128], final_activation=None).to(self.args.device)
-        self.softmax_layer = ClassifierModel(input_size=128).to(self.args.device)
+        self.softmax_layer = SoftmaxModel(input_size=128).to(self.args.device)
         self.writer = SummaryWriter(self.args.log_path)
         # self.writer.add_graph(model=self.sdae_model,
         #                      input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
@@ -68,7 +68,7 @@ class Trainer(object):
     def to_serialization(self, visualization: Mapping):
         if not os.path.exists(self.args.visualization_dir):
             os.mkdir(self.args.visualization_dir)
-        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_sdae-p{self.args.pretrain_epochs}-c{self.args.classifier_epochs}-f{self.args.finetune_epochs}.bin"))
+        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_sdae-p{self.args.pretrain_epochs}-c{self.args.classifier_epochs}-f{self.args.finetune_epochs}.pt"))
 
     def _pretrain_sdae_layer(self,
                              dataset: torch.utils.data.Dataset,

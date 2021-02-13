@@ -11,7 +11,8 @@ from typing import Mapping
 sys.path.append(os.path.dirname(os.getcwd()))
 from src.utils.metrics import Metrics
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
-from src.models.classifier_model import ClassifierModel
+from src.models.softmax_model import SoftmaxModel
+from src.models.dnn_model import DNNModel
 from src.utils.utils import custom_collate_fn
 
 PROJECT_DIR = os.path.dirname(os.getcwd())  # get current working directory
@@ -36,7 +37,12 @@ class Trainer:
         self.train_total, self.validation_total = len(self.train_dataset), len(self.validation_dataset)
         self.train_input_size = next(iter(self.train_dataloader))["input_ids"].shape[1]
         self.validation_input_size = next(iter(self.validation_dataloader))["input_ids"].shape[1]
-        self.classifier_model = ClassifierModel(input_size=self.train_input_size).to(self.args.device)
+        if self.args.model_name == "DNN":
+            self.classifier_model = DNNModel(input_size=self.train_input_size).to(self.args.device)
+        elif self.args.model_name == "Softmax":
+            self.classifier_model = SoftmaxModel(input_size=self.train_input_size).to(self.args.device)
+        else:
+            raise ValueError("Please input the right model type.")
         self.writer = SummaryWriter(self.args.log_path)
         self.writer.add_graph(model=self.classifier_model,
                               input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
@@ -53,7 +59,7 @@ class Trainer:
     def to_serialization(self, visualization: Mapping):
         if not os.path.exists(self.args.visualization_dir):
             os.mkdir(self.args.visualization_dir)
-        torch.save(visualization, os.path.join(self.args.visualization_dir, "visualization.bin"))
+        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_{self.args.model_name}.pt"))
 
     def eval(self, epoch):
         self.classifier_model.eval()
@@ -62,11 +68,11 @@ class Trainer:
             batch = {key: value.to(self.args.device) for key, value in batch.items()}
             input_ids, label = batch["input_ids"], batch["label"]
             with torch.no_grad():
-                # Single classifier model
+                # Softmax model
                 prediction = self.classifier_model(input_ids)
                 classifier_model_loss = self.classifier_model.criterion(prediction, label)
                 # for tensorboard
-                self.writer.add_scalar(tag="Softmax Model Validation Loss",
+                self.writer.add_scalar(tag=f"{self.args.model_name} Model Validation Loss",
                                        scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.validation_dataloader) + i)
                 # for visualization
@@ -97,7 +103,7 @@ class Trainer:
                 input_ids, label = batch["input_ids"], batch["label"]
                 label = label.view(-1)
 
-                # Single classifier model
+                # Classifier model
                 prediction = self.classifier_model(input_ids)
                 classifier_model_loss = self.classifier_model.criterion(prediction, label)
                 self.classifier_model.optimizer.zero_grad()
@@ -105,7 +111,7 @@ class Trainer:
                 self.classifier_model.optimizer.step()
 
                 # for tensorboard
-                self.writer.add_scalar(tag="Softmax Model Train Loss",
+                self.writer.add_scalar(tag=f"{self.args.model_name} Model Train Loss",
                                        scalar_value=classifier_model_loss.item(),
                                        global_step=epoch * len(self.train_dataloader) + i)
                 # for visualization
@@ -165,6 +171,10 @@ if __name__ == "__main__":
                         type=str,
                         default=VISUALIZATION_DIR,
                         help="Output for visualization.")
+    parser.add_argument("--model_name",
+                        type=str,
+                        default="DNN",  # or Softmax
+                        help="Model name.")
     parser.add_argument("--device",
                         type=str,
                         default="cuda" if torch.cuda.is_available() else "cpu",

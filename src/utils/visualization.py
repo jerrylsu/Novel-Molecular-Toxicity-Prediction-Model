@@ -38,15 +38,15 @@ def plot_2d(predicts, labels):
 if __name__ == "__main__":
     """Single classifier: validation best epoch = epoch1"""
 
-    # sdae softmax best
+    # sdae model
     vis = torch.load("../../data/visualization/visualization_sdae-p3-c3-f5.bin")
     predicts, labels = vis["epoch1"]["validation_classifier"], vis["epoch1"]["validation_labels"]
 
-    # single softmax best
-    # vis = torch.load("../../data/visualization/visualization_single_softmax.bin")
-    # predicts, labels = vis["epoch6"]["validation_classifier"], vis["epoch6"]["validation_labels"]
+    # softmax model
+    vis = torch.load("../../data/visualization/visualization_softmax_model.pt")
+    predicts, labels = vis["epoch6"]["validation_classifier"], vis["epoch6"]["validation_labels"]
 
-    # dnn softmax best
+    # dnn model
     # vis = torch.load("../../data/visualization/visualization_dnn_softmax.bin")
     # predicts, labels = vis["epoch1"]["validation_classifier"], vis["epoch1"]["validation_labels"]
 

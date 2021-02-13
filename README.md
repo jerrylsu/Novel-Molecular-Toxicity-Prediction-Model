@@ -2,12 +2,12 @@
 
 Novel molecular toxicity prediction model based on Softmax / Deep Neural Network / Stacked Autoencoder / Stacked Capsule Model.
 
-| Model | Accuracy ( train / test ) | F1 |
-| :----: | :----: | :----: |
-| Softmax Model | 0.9182 / 0.8154 |  |
-| Deep Neural Network Model | 0.9085 / 0.8347 |  |
-| Stacked Autoencoder Model |  |  |
-| Stacked Capsule Network Model | - |  |
+| Model Name | Recall | Precision  | F1 | AUC | Accuracy |
+| :----: | :----: | :----: | :----: | :----: | :----: |
+| Softmax Model | 0.7235 | 0.8662 | 0.7885 | 0.8125 | 0.8182 |
+| Deep Neural Network Model | | | | | |
+| Stacked Autoencoder Model | | | | | |
+| Stacked Capsule Network Model | | | | | |
 
 ### 1. Softmax Model
 
