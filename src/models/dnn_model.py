@@ -8,10 +8,12 @@ class DNNModel(nn.Module):
 
         # DNN model
         self.dnn_model = nn.Sequential(
+            nn.Linear(input_size, 2048),
+            nn.Dropout(0.2),
+            nn.LeakyReLU(),
             nn.Linear(input_size, 1024),
             nn.Dropout(0.2),
             nn.LeakyReLU(),
-            nn.Dropout(0.2),
             nn.Linear(1024, 512),
             nn.Dropout(0.2),
             nn.LeakyReLU(),
