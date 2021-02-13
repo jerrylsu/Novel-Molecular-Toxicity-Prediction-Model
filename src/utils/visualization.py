@@ -47,9 +47,10 @@ if __name__ == "__main__":
     dnn_predicts, dnn_labels = dnn_vis["epoch1"]["validation_classifier"], dnn_vis["epoch1"]["validation_labels"]
 
     # sdae model
-    # sdae_vis = torch.load("../../data/visualization/visualization_sdae-p3-c3-f5.bin")
-    # sdae_predicts, sdae_labels = sdae_vis["epoch1"]["validation_classifier"], sdae_vis["epoch1"]["validation_labels"]
+    sdae_vis = torch.load("../../data/visualization/visualization_SDAE-p3-c3-f5.pt")
+    sdae_predicts, sdae_labels = sdae_vis["epoch1"]["validation_classifier"], sdae_vis["epoch1"]["validation_labels"]
 
+    plot_2d(sdae_predicts, sdae_labels)
     plot_2d(softmax_predicts, softmax_labels)
     plot_2d(dnn_predicts, dnn_labels)
     pass
