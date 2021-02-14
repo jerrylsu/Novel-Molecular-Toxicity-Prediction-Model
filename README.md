@@ -21,7 +21,7 @@ Novel molecular toxicity prediction model based on Softmax / Deep Neural Network
 
 ### 2. Deep Neural Network Model
 
--loss
+- loss
 
 ![loss](./data/results/deep_neural_network/loss.jpeg)
 
