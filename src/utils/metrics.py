@@ -1,5 +1,6 @@
 from sklearn import metrics
 from typing import List
+import pandas as pd
 
 
 class Metrics(object):
@@ -21,3 +22,9 @@ class Metrics(object):
 
     def calculate_f1(self, y_true: List, y_pred: List):
         return metrics.f1_score(y_true, y_pred)
+
+    def classification_report(self, y_true: List, y_pred: List):
+        return metrics.classification_report(y_true, y_pred)
+
+    def calculate_confusion_matrix(self, y_true: List, y_pred: List):
+        return pd.crosstab(y_true, y_pred, rownames=['Actuall'], colnames=['Predicted'])
