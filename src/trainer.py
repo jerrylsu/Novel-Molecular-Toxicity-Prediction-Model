@@ -1,3 +1,6 @@
+"""
+Triner for Softmax model, DNN model and Capsule Networks Model.
+"""
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = '4'
 import sys
