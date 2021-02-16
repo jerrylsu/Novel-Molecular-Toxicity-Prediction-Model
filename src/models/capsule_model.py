@@ -22,7 +22,9 @@ class CapsuleConvLayer(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        return self.relu(self.conv0(x))
+        x = self.conv0(x)
+        x = self.relu(x)
+        return x
 
 
 class ConvUnit(nn.Module):
@@ -36,7 +38,8 @@ class ConvUnit(nn.Module):
                                bias=True)
 
     def forward(self, x):
-        return self.conv0(x)
+        x = self.conv0(x)
+        return x
 
 
 class CapsuleLayer(nn.Module):
@@ -181,7 +184,11 @@ class CapsuleModel(nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
     def forward(self, x):
-        return self.digits(self.primary(self.conv1(x)))
+        x = x.unsqueeze(1)
+        x = self.conv1(x)
+        x = self.primary(x)
+        x = self.digits(x)
+        return x
 
     def criterion(self, images, input, target, size_average=True):
         return self.margin_loss(input, target, size_average) + self.reconstruction_loss(images, input, size_average)
