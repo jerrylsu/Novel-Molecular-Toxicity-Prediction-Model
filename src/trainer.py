@@ -46,10 +46,7 @@ class Trainer:
         elif self.args.model_name == "Softmax":
             self.classifier_model = SoftmaxModel(input_size=self.train_input_size).to(self.args.device)
         elif self.args.model_name == "Capsule":
-            self.classifier_model = CapsuleModel(image_width=28,
-                                                 image_height=28,
-                                                 image_channels=1,
-                                                 conv_inputs=1,
+            self.classifier_model = CapsuleModel(conv_inputs=1,
                                                  conv_outputs=256,
                                                  num_primary_units=8,
                                                  primary_unit_size=32 * 6 * 6,  # fixme get from conv2d

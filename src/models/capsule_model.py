@@ -141,9 +141,6 @@ class CapsuleLayer(nn.Module):
 
 class CapsuleModel(nn.Module):
     def __init__(self,
-                 image_width,
-                 image_height,
-                 image_channels,
                  conv_inputs,
                  conv_outputs,
                  num_primary_units,
@@ -153,10 +150,6 @@ class CapsuleModel(nn.Module):
         super(CapsuleModel, self).__init__()
 
         self.reconstructed_image_count = 0
-
-        self.image_channels = image_channels
-        self.image_width = image_width
-        self.image_height = image_height
 
         self.conv1 = CapsuleConvLayer(in_channels=conv_inputs,
                                       out_channels=conv_outputs)
@@ -246,7 +239,7 @@ class CapsuleModel(nn.Module):
         output = self.relu(self.reconstruct0(masked))
         output = self.relu(self.reconstruct1(output))
         output = self.sigmoid(self.reconstruct2(output))
-        output = output.view(-1, self.image_channels, self.image_height, self.image_width)
+        output = output.view(-1)
 
         # Save reconstructed images occasionally.
         if self.reconstructed_image_count % 10 == 0:
