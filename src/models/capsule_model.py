@@ -166,10 +166,10 @@ class CapsuleModel(nn.Module):
                                    unit_size=output_unit_size,
                                    use_routing=True)
 
-        reconstruction_size = image_width * image_height * image_channels
-        self.reconstruct0 = nn.Linear(num_output_units*output_unit_size, int((reconstruction_size * 2) / 3))
-        self.reconstruct1 = nn.Linear(int((reconstruction_size * 2) / 3), int((reconstruction_size * 3) / 2))
-        self.reconstruct2 = nn.Linear(int((reconstruction_size * 3) / 2), reconstruction_size)
+        reconstruction_size = 227989
+        self.reconstruct0 = nn.Linear(128, 256)
+        self.reconstruct1 = nn.Linear(256, 512)
+        self.reconstruct2 = nn.Linear(512, reconstruction_size)
 
         self.relu = nn.ReLU(inplace=True)
         self.sigmoid = nn.Sigmoid()
