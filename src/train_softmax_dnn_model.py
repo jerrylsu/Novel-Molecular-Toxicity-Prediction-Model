@@ -13,6 +13,7 @@ from src.utils.metrics import Metrics
 from src.featurizers.featurizer import CSFPDataset, get_dataloader
 from src.models.softmax_model import SoftmaxModel
 from src.models.dnn_model import DNNModel
+from src.models.capsule_model import CapsuleModel
 from src.utils.utils import custom_collate_fn
 
 PROJECT_DIR = os.path.dirname(os.getcwd())  # get current working directory
@@ -41,6 +42,16 @@ class Trainer:
             self.classifier_model = DNNModel(input_size=self.train_input_size).to(self.args.device)
         elif self.args.model_name == "Softmax":
             self.classifier_model = SoftmaxModel(input_size=self.train_input_size).to(self.args.device)
+        elif self.args.model_name == "Capsule":
+            self.classifier_model = CapsuleModel(image_width=28,
+                                                 image_height=28,
+                                                 image_channels=1,
+                                                 conv_inputs=1,
+                                                 conv_outputs=256,
+                                                 num_primary_units=8,
+                                                 primary_unit_size=32 * 6 * 6,  # fixme get from conv2d
+                                                 num_output_units=2,           # one for each MNIST digit
+                                                 output_unit_size=16).to(self.args.device)
         else:
             raise ValueError("Please input the right model type.")
         self.writer = SummaryWriter(self.args.log_path)
@@ -173,7 +184,7 @@ if __name__ == "__main__":
                         help="Output for visualization.")
     parser.add_argument("--model_name",
                         type=str,
-                        default="Softmax",  # or Softmax
+                        default="Capsule",  # or Softmax / DNN / Capsule
                         help="Model name.")
     parser.add_argument("--device",
                         type=str,
@@ -184,7 +195,7 @@ if __name__ == "__main__":
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
-    parser.add_argument("--num_workers", type=int, default=2, help="Number of subprocesses for data loading.")
+    parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
     args = parser.parse_args()
     trainer = Trainer(args=args)
