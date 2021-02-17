@@ -47,7 +47,7 @@ class Trainer:
             self.classifier_model = SoftmaxModel(input_size=self.train_input_size).to(self.args.device)
         elif self.args.model_name == "Capsule":
             self.classifier_model = CapsuleModel(conv_inputs=1,
-                                                 conv_outputs=256,
+                                                 conv_outputs=5, # 256,
                                                  num_primary_units=8,
                                                  primary_unit_size=32 * 6 * 6,  # fixme get from conv2d
                                                  num_output_units=2,           # one for each MNIST digit
@@ -55,8 +55,8 @@ class Trainer:
         else:
             raise ValueError("Please input the right model type.")
         self.writer = SummaryWriter(self.args.log_path)
-        self.writer.add_graph(model=self.classifier_model,
-                              input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
+        # self.writer.add_graph(model=self.classifier_model,
+        #                       input_to_model=next(iter(self.train_dataloader))["input_ids"].to(self.args.device))
         pass
 
     def set_seed(self, seed):
