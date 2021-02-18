@@ -32,7 +32,7 @@ class ConvUnit(nn.Module):
         super(ConvUnit, self).__init__()
 
         self.conv0 = nn.Conv1d(in_channels=in_channels,
-                               out_channels=32,  # fixme constant
+                               out_channels=5,  # fixme constant
                                kernel_size=40000,  # fixme constant
                                stride=2, # fixme constant
                                bias=True)
