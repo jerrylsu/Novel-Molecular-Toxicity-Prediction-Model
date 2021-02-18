@@ -47,5 +47,8 @@ Novel molecular toxicity prediction model based on Softmax / Deep Neural Network
 
 - Sara Sabour, Nicholas Frosst, and Geoffrey E. Hinton. Dynamic routing between capsules. In NIPS, pages 3859-3869, 2017.
 
+- [Capsule Networks Explained](https://kndrck.co/posts/capsule_networks_explained/?nsukey=T%2FHdvRcjUBfihkYW23QZW0A8Q%2BljC4XZ9xJ0fVl2CVMEplz%2F1PwPluHYtS%2FUUxitMi%2BroERqd7kohaw8wXNUYmJUzpRpzSz6sud35oxMViGrNEpilQ7i3%2BPynLRiLYP6IEd7tmfNSkYGb%2F2vn4J4pnIht3tu6lihLD6vwQ7frfIQvDI8G3K0f1ILzbiFWx%2FV4%2BYufwFyWlyf9ypf7TDd1g%3D%3D)
+
 - Wang, Y.-W., Huang, L., Jiang, S.-W., Li, K., Zou, J., & Yang, S.-Y. (2020). CapsCarcino: A novel sparse data deep learning tool for predicting carcinogens. Food and Chemical Toxicology, 135, 110921.
 
+- [http://www.jerrylsu.net/articles/2021/ml-Capsule-Networks.html](http://www.jerrylsu.net/articles/2021/ml-Capsule-Networks.html)
