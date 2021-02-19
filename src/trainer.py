@@ -80,8 +80,14 @@ class Trainer:
             input_ids, label = batch["input_ids"], batch["label"].view(-1)
             with torch.no_grad():
                 # Softmax model
-                prediction, sdae_encoded = self.classifier_model(input_ids)
-                classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
+                if self.args.model_name == "Capsule":
+                    prediction, sdae_encoded = self.classifier_model(input_ids)
+                    # classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
+                    predict = torch.sqrt((prediction ** 2).sum(dim=2))
+                    classifier_model_loss = self.classifier_model.criterion(predict, label)
+                else:
+                    prediction = self.classifier_model(input_ids)
+                    classifier_model_loss = self.classifier_model.criterion(prediction, label)
                 # for tensorboard
                 self.writer.add_scalar(tag=f"{self.args.model_name} Model Validation Loss",
                                        scalar_value=classifier_model_loss.item(),
@@ -122,7 +128,9 @@ class Trainer:
                 # Classifier model
                 if self.args.model_name == "Capsule":
                     prediction, sdae_encoded = self.classifier_model(input_ids)
-                    classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
+                    # classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
+                    predict = torch.sqrt((prediction ** 2).sum(dim=2))
+                    classifier_model_loss = self.classifier_model.criterion(predict, label)
                 else:
                     prediction = self.classifier_model(input_ids)
                     classifier_model_loss = self.classifier_model.criterion(prediction, label)
