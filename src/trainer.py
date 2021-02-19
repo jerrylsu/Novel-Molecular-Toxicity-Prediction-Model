@@ -91,7 +91,7 @@ class Trainer:
                 labels.append(label)
                 # for metric
                 if self.args.model_name == "Capsule":
-                    prediction = (prediction**2).sum(-1).max(1, keepdim=True)[1]
+                    prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
                 else:
                     prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
@@ -103,6 +103,8 @@ class Trainer:
         validation_f1 = f"F1 of validation epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
         validation_auc = f"Auc of validation epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
         validation_accuracy = f"Accuracy of validation epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
+        print(f"Validatopn loss: {round(classifier_model_loss.cpu().item(), 4)}")
+        print(validation_accuracy)
         return validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, predictions_vis, labels
 
     def train(self):
@@ -137,9 +139,7 @@ class Trainer:
                 labels.append(label)
                 # for metrics
                 if self.args.model_name == "Capsule":
-                    prediction = prediction**2
-                    prediction = prediction.sum(-1)
-                    prediction = prediction.max(-1, keepdim=True)[1]
+                    prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
                 else:
                     prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
@@ -152,6 +152,8 @@ class Trainer:
             train_auc = f"Auc of train epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
             train_accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
             validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, validation_predictions_vis, validation_labels = self.eval(epoch=epoch)
+            print(f"Train loss: {round(classifier_model_loss.cpu().item(), 4)}")
+            print(train_accuracy)
             visualization_data[f"epoch{epoch}"] = {"train_classifier": predictions_vis,
                                                    "train_labels": labels,
                                                    "train_recall": train_recall,
@@ -204,7 +206,7 @@ if __name__ == "__main__":
                         help="Device (cuda or cpu)")
     parser.add_argument("--log_path", type=str, default=LOG_DIR, help="Path of the log.")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
-    parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
+    parser.add_argument("--classifier_lr", type=float, default=0.01, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=2, help="Number of subprocesses for data loading.")
