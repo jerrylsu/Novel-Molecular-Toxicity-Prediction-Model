@@ -2,12 +2,12 @@
 # Dynamic Routing Between Capsules
 # https://arxiv.org/pdf/1710.09829.pdf
 #
-
+import os
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
-
+from src.trainer_sdae_model import MODEL_DIR
 
 class CapsuleConvLayer(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -32,9 +32,9 @@ class ConvUnit(nn.Module):
         super(ConvUnit, self).__init__()
 
         self.conv0 = nn.Conv1d(in_channels=in_channels,
-                               out_channels=5,  # fixme constant
-                               kernel_size=40000,  # fixme constant
-                               stride=2, # fixme constant
+                               out_channels=8,  # fixme constant
+                               kernel_size=8,   # fixme constant
+                               stride=2,        # fixme constant
                                bias=True)
 
     def forward(self, x):
@@ -54,7 +54,7 @@ class CapsuleLayer(nn.Module):
         if self.use_routing:
             # In the paper, the deeper capsule layer(s) with capsule inputs (DigitCaps) use a special routing algorithm
             # that uses this weight matrix.
-            self.W = nn.Parameter(torch.randn(1, in_channels, num_units, unit_size, in_units))
+            self.W = nn.Parameter(torch.randn(1, in_channels, num_units, unit_size, in_units))  # in_caps, out_caps, out_len, in_len
         else:
             # The first convolutional capsule layer (PrimaryCapsules in the paper) does not perform routing.
             # Instead, it is composed of several convolutional units, each of which sees the full input.
@@ -81,10 +81,10 @@ class CapsuleLayer(nn.Module):
 
     def no_routing(self, x):
         # Get output for each unit.
-        # Each will be (batch, channels, height, width).
+        # Each will be (batch, channels, len).
         u = [self.units[i](x) for i in range(self.num_units)]
 
-        # Stack all unit outputs (batch, unit, channels, height, width).
+        # Stack all unit outputs (batch, unit, channels, len).
         u = torch.stack(u, dim=1)
 
         # Flatten to (batch, unit, output).
@@ -110,7 +110,7 @@ class CapsuleLayer(nn.Module):
         u_hat = torch.matmul(W, x)
 
         # Initialize routing logits to zero.
-        b_ij = Variable(torch.zeros(1, self.in_channels, self.num_units, 1)).cuda()
+        b_ij = Variable(torch.zeros(1, self.in_channels, self.num_units, 1)).cuda()  # in_caps out_caps
 
         # Iterative routing.
         num_iterations = 3
@@ -151,6 +151,8 @@ class CapsuleModel(nn.Module):
 
         self.reconstructed_image_count = 0
 
+        self.sdae_model = torch.load(os.path.join(MODEL_DIR, "sdae_model-p3-c3-f5.pt")).eval()
+
         self.conv1 = CapsuleConvLayer(in_channels=conv_inputs,
                                       out_channels=conv_outputs)
 
@@ -166,10 +168,10 @@ class CapsuleModel(nn.Module):
                                    unit_size=output_unit_size,
                                    use_routing=True)
 
-        reconstruction_size = 227989
-        self.reconstruct0 = nn.Linear(128, 256)
-        self.reconstruct1 = nn.Linear(256, 512)
-        self.reconstruct2 = nn.Linear(512, reconstruction_size)
+        reconstruction_size = 128
+        self.reconstruct0 = nn.Linear(2, 32)
+        self.reconstruct1 = nn.Linear(32, 64)
+        self.reconstruct2 = nn.Linear(64, reconstruction_size)
 
         self.relu = nn.ReLU(inplace=True)
         self.sigmoid = nn.Sigmoid()
@@ -177,20 +179,20 @@ class CapsuleModel(nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
     def forward(self, x):
-        x = x.unsqueeze(1)
-        x = self.conv1(x)
-        x = self.primary(x)
-        x = self.digits(x)
-        return x
+        sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
+        # x = self.conv1(x)
+        x = self.primary(sdae_encoded)
+        x = self.digits(x).squeeze(-1)
+        return x, sdae_encoded
 
-    def criterion(self, images, input, target, size_average=True):
-        return self.margin_loss(input, target, size_average) + self.reconstruction_loss(images, input, size_average)
+    def criterion(self, input_origin, predict, target, size_average=True):
+        return self.margin_loss(predict, target, size_average) # + self.reconstruction_loss(input_origin, predict, size_average)
 
-    def margin_loss(self, input, target, size_average=True):
-        batch_size = input.size(0)
+    def margin_loss(self, predict, target, size_average=True):
+        batch_size = predict.size(0)
 
         # ||vc|| from the paper.
-        v_mag = torch.sqrt((input**2).sum(dim=2, keepdim=True))
+        v_mag = torch.sqrt((predict**2).sum(dim=2, keepdim=True))
 
         # Calculate left and right max() terms from equation 4 in the paper.
         zero = Variable(torch.zeros(1)).cuda()
@@ -201,7 +203,7 @@ class CapsuleModel(nn.Module):
 
         # This is equation 4 from the paper.
         loss_lambda = 0.5
-        T_c = target
+        T_c = target.unsqueeze(1)
         L_c = T_c * max_l + loss_lambda * (1.0 - T_c) * max_r
         L_c = L_c.sum(dim=1)
 
@@ -210,20 +212,20 @@ class CapsuleModel(nn.Module):
 
         return L_c
 
-    def reconstruction_loss(self, images, input, size_average=True):
+    def reconstruction_loss(self, input_origin, predict, size_average=True):
         # Get the lengths of capsule outputs.
-        v_mag = torch.sqrt((input**2).sum(dim=2))
+        v_mag = torch.sqrt((predict**2).sum(dim=2))
 
         # Get index of longest capsule output.
         _, v_max_index = v_mag.max(dim=1)
         v_max_index = v_max_index.data
 
         # Use just the winning capsule's representation (and zeros for other capsules) to reconstruct input image.
-        batch_size = input.size(0)
+        batch_size = predict.size(0)
         all_masked = [None] * batch_size
         for batch_idx in range(batch_size):
             # Get one sample from the batch.
-            input_batch = input[batch_idx]
+            input_batch = predict[batch_idx]
 
             # Copy only the maximum capsule index from this batch sample.
             # This masks out (leaves as zero) the other capsules in this sample.
@@ -235,7 +237,7 @@ class CapsuleModel(nn.Module):
         masked = torch.stack(all_masked, dim=0)
 
         # Reconstruct input image.
-        masked = masked.view(input.size(0), -1)
+        masked = masked.view(predict.size(0), -1)
         output = self.relu(self.reconstruct0(masked))
         output = self.relu(self.reconstruct1(output))
         output = self.sigmoid(self.reconstruct2(output))
@@ -250,12 +252,12 @@ class CapsuleModel(nn.Module):
             else:
                 # assume RGB or grayscale
                 output_image = output.data.cpu()
-            vutils.save_image(output_image, "reconstruction.png")
+            # vutils.save_image(output_image, "reconstruction.png")
         self.reconstructed_image_count += 1
 
         # The reconstruction loss is the sum squared difference between the input image and reconstructed image.
         # Multiplied by a small number so it doesn't dominate the margin (class) loss.
-        error = (output - images).view(output.size(0), -1)
+        error = (output - input_origin).view(output.size(0), -1)
         error = error**2
         error = torch.sum(error, dim=1) * 0.0005
 

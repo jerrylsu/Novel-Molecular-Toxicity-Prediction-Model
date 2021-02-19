@@ -47,11 +47,11 @@ class Trainer:
             self.classifier_model = SoftmaxModel(input_size=self.train_input_size).to(self.args.device)
         elif self.args.model_name == "Capsule":
             self.classifier_model = CapsuleModel(conv_inputs=1,
-                                                 conv_outputs=5, # 256,
+                                                 conv_outputs=1,      # 256,
                                                  num_primary_units=8,
-                                                 primary_unit_size=32 * 6 * 6,  # fixme get from conv2d
+                                                 primary_unit_size=8*61,  # fixme get from conv2d
                                                  num_output_units=2,           # one for each MNIST digit
-                                                 output_unit_size=16).to(self.args.device)
+                                                 output_unit_size=2).to(self.args.device)
         else:
             raise ValueError("Please input the right model type.")
         self.writer = SummaryWriter(self.args.log_path)
@@ -77,11 +77,11 @@ class Trainer:
         predictions_vis, predictions, labels = [], [], []
         for i, batch in enumerate(tqdm(self.validation_dataloader, desc=f"Eval: ")):
             batch = {key: value.to(self.args.device) for key, value in batch.items()}
-            input_ids, label = batch["input_ids"], batch["label"]
+            input_ids, label = batch["input_ids"], batch["label"].view(-1)
             with torch.no_grad():
                 # Softmax model
-                prediction = self.classifier_model(input_ids)
-                classifier_model_loss = self.classifier_model.criterion(prediction, label)
+                prediction, sdae_encoded = self.classifier_model(input_ids)
+                classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
                 # for tensorboard
                 self.writer.add_scalar(tag=f"{self.args.model_name} Model Validation Loss",
                                        scalar_value=classifier_model_loss.item(),
@@ -90,7 +90,10 @@ class Trainer:
                 predictions_vis.append(prediction.detach())
                 labels.append(label)
                 # for metric
-                prediction = prediction.data.max(1, keepdim=True)[1]
+                if self.args.model_name == "Capsule":
+                    prediction = (prediction**2).sum(-1).max(1, keepdim=True)[1]
+                else:
+                    prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
         predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
         predictions = torch.cat(predictions, dim=0).cpu().numpy()
@@ -115,8 +118,12 @@ class Trainer:
                 label = label.view(-1)
 
                 # Classifier model
-                prediction = self.classifier_model(input_ids)
-                classifier_model_loss = self.classifier_model.criterion(prediction, label)
+                if self.args.model_name == "Capsule":
+                    prediction, sdae_encoded = self.classifier_model(input_ids)
+                    classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
+                else:
+                    prediction = self.classifier_model(input_ids)
+                    classifier_model_loss = self.classifier_model.criterion(prediction, label)
                 self.classifier_model.optimizer.zero_grad()
                 classifier_model_loss.backward()
                 self.classifier_model.optimizer.step()
@@ -129,7 +136,12 @@ class Trainer:
                 predictions_vis.append(prediction.detach())
                 labels.append(label)
                 # for metrics
-                prediction = prediction.data.max(1, keepdim=True)[1]
+                if self.args.model_name == "Capsule":
+                    prediction = prediction**2
+                    prediction = prediction.sum(-1)
+                    prediction = prediction.max(-1, keepdim=True)[1]
+                else:
+                    prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
             predictions_vis = torch.cat(predictions_vis, dim=0).cpu().numpy()
             predictions = torch.cat(predictions, dim=0).cpu().numpy()
@@ -194,7 +206,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.001, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of subprocesses for data loading.")
     parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
     args = parser.parse_args()
