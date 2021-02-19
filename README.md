@@ -7,7 +7,7 @@ Novel molecular toxicity prediction model based on Softmax / Deep Neural Network
 | Softmax Model | 0.7235 | 0.8601 | 0.7859 | 0.8100 | 0.8154 |
 | DNN+Softmax Model | 0.7765 | 0.8354 | 0.8049 | 0.8209| 0.8237 |
 | SAE+Softmax Model | 0.7706 | 0.8562 | 0.8111 | 0.8283 | 0.8320 |
-| SAE+CapsNets Model | | | | | |
+| SAE+CapsNets Model | 0.7353 | 0.8621 | 0.7937 | 0.8158 | 0.8209 |
 
 ### 1. Softmax Model
 
