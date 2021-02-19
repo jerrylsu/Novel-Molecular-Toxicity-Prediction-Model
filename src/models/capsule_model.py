@@ -117,7 +117,7 @@ class CapsuleLayer(nn.Module):
         for iteration in range(num_iterations):
             # Convert routing logits to softmax.
             # (batch, features, num_units, 1, 1)
-            c_ij = F.softmax(b_ij)
+            c_ij = F.softmax(b_ij, dim=1)   # dim = 1 by jerry. default dim=None
             c_ij = torch.cat([c_ij] * batch_size, dim=0).unsqueeze(4)
 
             # Apply routing (c_ij) to weighted inputs (u_hat).

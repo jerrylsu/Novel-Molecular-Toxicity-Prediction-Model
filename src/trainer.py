@@ -51,7 +51,7 @@ class Trainer:
                                                  num_primary_units=8,
                                                  primary_unit_size=8*61,  # fixme get from conv2d
                                                  num_output_units=2,           # one for each MNIST digit
-                                                 output_unit_size=2).to(self.args.device)
+                                                 output_unit_size=16).to(self.args.device)
         else:
             raise ValueError("Please input the right model type.")
         self.writer = SummaryWriter(self.args.log_path)
