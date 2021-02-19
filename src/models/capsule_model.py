@@ -149,8 +149,6 @@ class CapsuleModel(nn.Module):
                  output_unit_size):
         super(CapsuleModel, self).__init__()
 
-        self.reconstructed_image_count = 0
-
         self.sdae_model = torch.load(os.path.join(MODEL_DIR, "sdae_model-p3-c3-f5.pt")).eval()
 
         self.conv1 = CapsuleConvLayer(in_channels=conv_inputs,
@@ -169,7 +167,7 @@ class CapsuleModel(nn.Module):
                                    use_routing=True)
 
         reconstruction_size = 128
-        self.reconstruct0 = nn.Linear(2, 32)
+        self.reconstruct0 = nn.Linear(4, 32)
         self.reconstruct1 = nn.Linear(32, 64)
         self.reconstruct2 = nn.Linear(64, reconstruction_size)
 
@@ -186,7 +184,7 @@ class CapsuleModel(nn.Module):
         return x, sdae_encoded
 
     def criterion(self, input_origin, predict, target, size_average=True):
-        return self.margin_loss(predict, target, size_average) # + self.reconstruction_loss(input_origin, predict, size_average)
+        return self.margin_loss(predict, target, size_average) + self.reconstruction_loss(input_origin, predict, size_average)
 
     def margin_loss(self, predict, target, size_average=True):
         batch_size = predict.size(0)
@@ -213,6 +211,7 @@ class CapsuleModel(nn.Module):
         return L_c
 
     def reconstruction_loss(self, input_origin, predict, size_average=True):
+        input_origin = input_origin.squeeze(1).view(-1)
         # Get the lengths of capsule outputs.
         v_mag = torch.sqrt((predict**2).sum(dim=2))
 
@@ -242,18 +241,6 @@ class CapsuleModel(nn.Module):
         output = self.relu(self.reconstruct1(output))
         output = self.sigmoid(self.reconstruct2(output))
         output = output.view(-1)
-
-        # Save reconstructed images occasionally.
-        if self.reconstructed_image_count % 10 == 0:
-            if output.size(1) == 2:
-                # handle two-channel images
-                zeros = torch.zeros(output.size(0), 1, output.size(2), output.size(3))
-                output_image = torch.cat([zeros, output.data.cpu()], dim=1)
-            else:
-                # assume RGB or grayscale
-                output_image = output.data.cpu()
-            # vutils.save_image(output_image, "reconstruction.png")
-        self.reconstructed_image_count += 1
 
         # The reconstruction loss is the sum squared difference between the input image and reconstructed image.
         # Multiplied by a small number so it doesn't dominate the margin (class) loss.
