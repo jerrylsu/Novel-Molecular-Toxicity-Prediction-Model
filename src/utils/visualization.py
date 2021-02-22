@@ -50,6 +50,11 @@ if __name__ == "__main__":
     sdae_vis = torch.load("../../data/visualization/visualization_SDAE-p3-c3-f5.pt")
     sdae_predicts, sdae_labels = sdae_vis["epoch1"]["validation_classifier"], sdae_vis["epoch1"]["validation_labels"]
 
+    # capsule model
+    capsule_vis = torch.load("../../data/visualization/visualization_Capsule.pt")
+    capsule_predicts, capsule_labels = capsule_vis["epoch2"]["validation_classifier"], capsule_vis["epoch2"]["validation_labels"]
+    capsule_predicts = capsule_predicts.sum(axis=-1)
+    plot_2d(capsule_predicts, capsule_labels)
     plot_2d(sdae_predicts, sdae_labels)
     plot_2d(softmax_predicts, softmax_labels)
     plot_2d(dnn_predicts, dnn_labels)
