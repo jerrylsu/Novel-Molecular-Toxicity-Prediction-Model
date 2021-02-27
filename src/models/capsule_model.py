@@ -178,6 +178,8 @@ class CapsuleModel(nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
     def forward(self, x):
+        print(self.sdae_model)
+        raise "JERRYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
         sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
         # x = self.conv1(x)
         x = self.primary(sdae_encoded)
