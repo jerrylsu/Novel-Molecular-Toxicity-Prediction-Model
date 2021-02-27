@@ -482,7 +482,7 @@ if __name__ == "__main__":
     train_total, validation_total = len(train_dataset), len(validation_dataset)
     train_input_size = next(iter(train_dataloader))["input_ids"].shape[1]
     validation_input_size = next(iter(validation_dataloader))["input_ids"].shape[1]
-    sdae_model = StackedAutoEncoderModel(dimensions=[train_input_size, 512, 256, 128],
+    sdae_model = StackedAutoEncoderModel(dimensions=[train_input_size, 2048, 512, 256, 128],
                                          final_activation=None).to(args.device)
     trainer = Trainer(args=args)
     print("Pretraining sdae layers stage.")
@@ -508,5 +508,5 @@ if __name__ == "__main__":
                                               epochs=args.finetune_epochs,
                                               train_sdae=True,
                                               validation=validation_dataset)
-    torch.save(sdae_model, os.path.join(args.model_dir, f"sdae_model-p{args.pretrain_epochs}-c{args.classifier_epochs}-f{args.finetune_epochs}.pt"))
+    torch.save(sdae_model, os.path.join(args.model_dir, f"sdae2048-512-256-128_model-p{args.pretrain_epochs}-c{args.classifier_epochs}-f{args.finetune_epochs}.pt"))
     pass
