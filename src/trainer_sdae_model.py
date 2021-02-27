@@ -482,7 +482,7 @@ if __name__ == "__main__":
     train_total, validation_total = len(train_dataset), len(validation_dataset)
     train_input_size = next(iter(train_dataloader))["input_ids"].shape[1]
     validation_input_size = next(iter(validation_dataloader))["input_ids"].shape[1]
-    sdae_model = StackedAutoEncoderModel(dimensions=[train_input_size, 2048, 512, 256, 128],
+    sdae_model = StackedAutoEncoderModel(dimensions=[train_input_size, 1024, 512, 256, 128],
                                          final_activation=None).to(args.device)
     trainer = Trainer(args=args)
     print("Pretraining sdae layers stage.")
