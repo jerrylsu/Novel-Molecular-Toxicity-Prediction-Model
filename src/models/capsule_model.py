@@ -149,7 +149,7 @@ class CapsuleModel(nn.Module):
                  output_unit_size):
         super(CapsuleModel, self).__init__()
 
-        self.sdae_model = torch.load(os.path.join(MODEL_DIR, "sdae_model-p3-c3-f5.pt")).eval()
+        self.sdae_model = torch.load(os.path.join(MODEL_DIR, "sdae1024-512-256-128_model-p3-c3-f5.pt")).eval()
 
         self.conv1 = CapsuleConvLayer(in_channels=conv_inputs,
                                       out_channels=conv_outputs)
