@@ -178,13 +178,9 @@ class CapsuleModel(nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
     def forward(self, x):
-        sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
-        print(sdae_encoded.shape)
-        print('\n\n')
-        sdae_encoded2 = self.sdae_model.encoder[0](x).unsqueeze(1)
-        print(sdae_encoded2.shape)
-        print('\n\n')
-        raise "JERRYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+        # sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
+        sdae_encoded = self.sdae_model.encoder[0](x).unsqueeze(1)   # auto-encoder layer0
+        print(f"Auto-encoder layer0 shape: {sdae_encoded.shape}")
         # x = self.conv1(x)
         x = self.primary(sdae_encoded)
         x = self.digits(x).squeeze(-1)
