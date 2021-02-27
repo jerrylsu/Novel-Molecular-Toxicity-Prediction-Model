@@ -179,10 +179,10 @@ class CapsuleModel(nn.Module):
 
     def forward(self, x):
         sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
-        print(sdae_encoded)
+        print(sdae_encoded.shape)
         print('\n\n')
         sdae_encoded2 = self.sdae_model.encoder[0](x).unsqueeze(1)
-        print(sdae_encoded2)
+        print(sdae_encoded2.shape)
         print('\n\n')
         raise "JERRYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
         # x = self.conv1(x)
