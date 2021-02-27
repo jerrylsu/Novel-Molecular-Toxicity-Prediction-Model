@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import subprocess as sp
-from typing import Optional
+from typing import Optional, List
 
 
 class Rsync(object):
@@ -12,11 +12,13 @@ class Rsync(object):
         self.target_dir = target_dir
 
     def rsync(self,
-              exclude: Optional[str],
+              exclude: Optional[List[str]],
               dry_run: Optional[bool]=False):
         # Rsync files
-        cmd = f'rsync -avhi{"n" if dry_run else ""} --progress --delete --exclude="{exclude}" \
+        exclude = ' '.join([f'--exclude={ele}' for ele in exclude])
+        cmd = f'rsync -avhi{"n" if dry_run else ""} --progress --delete {exclude} \
                 {self.source_dir} {self.server_user_name}@{self.server_ip}:{self.target_dir}'
+        print(cmd)
         sp.run(cmd, shell=True, check=True)
 
 
@@ -31,7 +33,7 @@ class Git(object):
 
 
 rsync = Rsync(source_dir="../Novel-Molecular-Toxicity-Prediction-Model/", target_dir="/home/Novel-Molecular-Toxicity-Prediction-Model/")
-rsync.rsync(exclude="model", dry_run=False)
+rsync.rsync(exclude=['.git', 'model'], dry_run=False)
 
 git = Git()
 git.git_status_remote(target_dir="/home/Novel-Molecular-Toxicity-Prediction-Model/")
