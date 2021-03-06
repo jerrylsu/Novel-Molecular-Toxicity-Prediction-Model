@@ -48,8 +48,8 @@ class Trainer:
         elif self.args.model_name == "Capsule":
             self.classifier_model = CapsuleModel(conv_inputs=1,
                                                  conv_outputs=1,      # 256,
-                                                 num_primary_units=8,
-                                                 primary_unit_size=8*253,  # fixme get from conv2d  61(128)---253(512)--509(1024)
+                                                 num_primary_units=16,
+                                                 primary_unit_size=16*253,  # fixme get from conv2d  61(128)---253(512)--509(1024)
                                                  num_output_units=2,           # one for each MNIST digit
                                                  output_unit_size=2).to(self.args.device)
         else:
