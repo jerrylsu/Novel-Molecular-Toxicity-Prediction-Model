@@ -149,6 +149,8 @@ class CapsuleModel(nn.Module):
                  output_unit_size):
         super(CapsuleModel, self).__init__()
 
+        self.fc = torch.nn.Linear(227989, 512)
+        self.relu = torch.nn.LeakyReLU()
         self.sdae_model = torch.load(os.path.join(MODEL_DIR, "sdae1024-512-256-128_model-p3-c3-f5.pt")).eval()
 
         self.conv1 = CapsuleConvLayer(in_channels=conv_inputs,
@@ -179,8 +181,9 @@ class CapsuleModel(nn.Module):
 
     def forward(self, x):
         # sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
-        sdae_encoded = self.sdae_model.encoder[0](x).unsqueeze(1)   # auto-encoder layer0
-        print(f"Auto-encoder layer0 shape: {sdae_encoded.shape}")
+        # sdae_encoded = self.sdae_model.encoder[0](x).unsqueeze(1)   # auto-encoder layer0
+        x = self.fc(x) # auto-encoder layer0
+        sdae_encoded = self.relu(x).unsqueeze(1)
         # x = self.conv1(x)
         x = self.primary(sdae_encoded)
         x = self.digits(x).squeeze(-1)

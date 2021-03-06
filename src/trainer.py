@@ -49,9 +49,9 @@ class Trainer:
             self.classifier_model = CapsuleModel(conv_inputs=1,
                                                  conv_outputs=1,      # 256,
                                                  num_primary_units=8,
-                                                 primary_unit_size=8*509,  # fixme get from conv2d  61(128)---253(512)--509(1024)
+                                                 primary_unit_size=8*253,  # fixme get from conv2d  61(128)---253(512)--509(1024)
                                                  num_output_units=2,           # one for each MNIST digit
-                                                 output_unit_size=16).to(self.args.device)
+                                                 output_unit_size=128).to(self.args.device)
         else:
             raise ValueError("Please input the right model type.")
         self.writer = SummaryWriter(self.args.log_path)
@@ -216,9 +216,9 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
     parser.add_argument("--classifier_lr", type=float, default=0.01, help="Learning rate of the Classifier.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     parser.add_argument("--num_workers", type=int, default=2, help="Number of subprocesses for data loading.")
-    parser.add_argument("--warmup_steps", type=int, default=500, help="The steps of warm up.")
+    parser.add_argument("--warmup_steps", type=int, default=0, help="The steps of warm up.")
     args = parser.parse_args()
     trainer = Trainer(args=args)
     trainer.train()
