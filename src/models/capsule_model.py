@@ -32,8 +32,8 @@ class ConvUnit(nn.Module):
         super(ConvUnit, self).__init__()
 
         self.conv0 = nn.Conv1d(in_channels=in_channels,
-                               out_channels=16,  # fixme constant
-                               kernel_size=16,   # fixme constant
+                               out_channels=8,  # fixme constant
+                               kernel_size=8,   # fixme constant
                                stride=2,        # fixme constant
                                bias=True)
 
@@ -167,8 +167,17 @@ class CapsuleModel(nn.Module):
                                    num_units=num_output_units,    # 2
                                    unit_size=output_unit_size,    # 2
                                    use_routing=True)
+        self.fc2 = nn.Sequential(
+            nn.Linear(256, 128),
+            nn.Dropout(0.2),
+            nn.LeakyReLU(),
+            nn.Linear(128, 64),
+            nn.Dropout(0.2),
+            nn.LeakyReLU(),
+            nn.Linear(64, 2),
+        )
 
-        reconstruction_size = 512 
+        reconstruction_size = 512
         self.reconstruct0 = nn.Linear(4, 32)
         self.reconstruct1 = nn.Linear(32, 64)
         self.reconstruct2 = nn.Linear(64, reconstruction_size)
@@ -177,7 +186,7 @@ class CapsuleModel(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
 
     def forward(self, x):
         # sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
@@ -187,6 +196,8 @@ class CapsuleModel(nn.Module):
         # x = self.conv1(x)
         x = self.primary(sdae_encoded)
         x = self.digits(x).squeeze(-1)
+        x = x.view(x.shape[0], -1)
+        x = self.fc2(x)
         return x, sdae_encoded
 
     def criterion1(self, input_origin, predict, target, size_average=True):
