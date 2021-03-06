@@ -49,9 +49,9 @@ class Trainer:
             self.classifier_model = CapsuleModel(conv_inputs=1,
                                                  conv_outputs=1,      # 256,
                                                  num_primary_units=8,
-                                                 primary_unit_size=8*225,  # fixme get from conv2d  61(128)---253(512)--509(1024)
+                                                 primary_unit_size=8*61,  # fixme get from conv2d  61(128)---253(512)--509(1024)
                                                  num_output_units=2,           # one for each MNIST digit
-                                                 output_unit_size=128).to(self.args.device)
+                                                 output_unit_size=2).to(self.args.device)
         else:
             raise ValueError("Please input the right model type.")
         self.writer = SummaryWriter(self.args.log_path)

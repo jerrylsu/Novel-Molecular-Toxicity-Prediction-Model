@@ -33,7 +33,7 @@ class ConvUnit(nn.Module):
 
         self.conv0 = nn.Conv1d(in_channels=in_channels,
                                out_channels=8,  # fixme constant
-                               kernel_size=64,   # fixme constant
+                               kernel_size=8,   # fixme constant
                                stride=2,        # fixme constant
                                bias=True)
 
@@ -149,7 +149,15 @@ class CapsuleModel(nn.Module):
                  output_unit_size):
         super(CapsuleModel, self).__init__()
 
-        self.fc = torch.nn.Linear(227989, 512)
+        self.fc = nn.Sequential(
+            nn.Linear(227989, 512),
+            nn.Dropout(0.2),
+            nn.LeakyReLU(),
+            nn.Linear(512, 256),
+            nn.Dropout(0.2),
+            nn.LeakyReLU(),
+            nn.Linear(256, 128),
+        )
         self.relu = torch.nn.LeakyReLU()
         # self.sdae_model = torch.load(os.path.join(MODEL_DIR, "sdae1024-512-256-128_model-p3-c3-f5.pt")).eval()
 
@@ -167,15 +175,6 @@ class CapsuleModel(nn.Module):
                                    num_units=num_output_units,    # 2
                                    unit_size=output_unit_size,    # 2
                                    use_routing=True)
-        self.fc2 = nn.Sequential(
-            nn.Linear(256, 128),
-            nn.Dropout(0.2),
-            nn.LeakyReLU(),
-            nn.Linear(128, 64),
-            nn.Dropout(0.2),
-            nn.LeakyReLU(),
-            nn.Linear(64, 2),
-        )
 
         reconstruction_size = 512
         self.reconstruct0 = nn.Linear(4, 32)
@@ -191,8 +190,7 @@ class CapsuleModel(nn.Module):
     def forward(self, x):
         # sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
         # sdae_encoded = self.sdae_model.encoder[0](x).unsqueeze(1)   # auto-encoder layer0
-        x = self.fc(x)  # auto-encoder layer0
-        sdae_encoded = self.relu(x).unsqueeze(1)
+        sdae_encoded = self.fc(x).unsqueeze(1)  # auto-encoder layer0
         # sdae_encoded = self.conv1(x)
         x = self.primary(sdae_encoded)
         x = self.digits(x).squeeze(-1)
