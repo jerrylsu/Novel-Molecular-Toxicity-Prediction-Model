@@ -84,7 +84,7 @@ class Trainer:
                     prediction, sdae_encoded = self.classifier_model(input_ids)
                     # classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
 
-                    # predict = torch.sqrt((prediction ** 2).sum(dim=2))
+                    predict = prediction  # torch.sqrt((prediction ** 2).sum(dim=2))
                     classifier_model_loss = self.classifier_model.criterion(predict, label)
                 else:
                     prediction = self.classifier_model(input_ids)
