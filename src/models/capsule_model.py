@@ -186,7 +186,7 @@ class CapsuleModel(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
     def forward(self, x):
         # sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
