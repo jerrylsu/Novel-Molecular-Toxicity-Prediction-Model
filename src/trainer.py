@@ -49,7 +49,7 @@ class Trainer:
             self.classifier_model = CapsuleModel(conv_inputs=1,
                                                  conv_outputs=1,      # 256,
                                                  num_primary_units=16,
-                                                 primary_unit_size=16*253,  # fixme get from conv2d  61(128)---253(512)--509(1024)
+                                                 primary_unit_size=16*249,  # fixme get from conv2d  61(128)---253(512)--509(1024)
                                                  num_output_units=2,           # one for each MNIST digit
                                                  output_unit_size=2).to(self.args.device)
         else:
@@ -82,9 +82,9 @@ class Trainer:
                 # Softmax model
                 if self.args.model_name == "Capsule":
                     prediction, sdae_encoded = self.classifier_model(input_ids)
-                    classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
-                    #predict = torch.sqrt((prediction ** 2).sum(dim=2))
-                    #classifier_model_loss = self.classifier_model.criterion(predict, label)
+                    # classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
+                    predict = torch.sqrt((prediction ** 2).sum(dim=2))
+                    classifier_model_loss = self.classifier_model.criterion(predict, label)
                 else:
                     prediction = self.classifier_model(input_ids)
                     classifier_model_loss = self.classifier_model.criterion(prediction, label)
@@ -128,9 +128,9 @@ class Trainer:
                 # Classifier model
                 if self.args.model_name == "Capsule":
                     prediction, sdae_encoded = self.classifier_model(input_ids)
-                    classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
-                    #predict = torch.sqrt((prediction ** 2).sum(dim=2))
-                    #classifier_model_loss = self.classifier_model.criterion(predict, label)
+                    # classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
+                    predict = torch.sqrt((prediction ** 2).sum(dim=2))
+                    classifier_model_loss = self.classifier_model.criterion(predict, label)
                 else:
                     prediction = self.classifier_model(input_ids)
                     classifier_model_loss = self.classifier_model.criterion(prediction, label)
