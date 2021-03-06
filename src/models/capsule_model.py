@@ -33,7 +33,7 @@ class ConvUnit(nn.Module):
 
         self.conv0 = nn.Conv1d(in_channels=in_channels,
                                out_channels=8,  # fixme constant
-                               kernel_size=8,   # fixme constant
+                               kernel_size=64,   # fixme constant
                                stride=2,        # fixme constant
                                bias=True)
 
