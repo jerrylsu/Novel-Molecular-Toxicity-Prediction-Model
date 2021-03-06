@@ -32,8 +32,8 @@ class ConvUnit(nn.Module):
         super(ConvUnit, self).__init__()
 
         self.conv0 = nn.Conv1d(in_channels=in_channels,
-                               out_channels=8,  # fixme constant
-                               kernel_size=8,   # fixme constant
+                               out_channels=16,  # fixme constant
+                               kernel_size=16,   # fixme constant
                                stride=2,        # fixme constant
                                bias=True)
 
@@ -157,15 +157,15 @@ class CapsuleModel(nn.Module):
                                       out_channels=conv_outputs)
 
         self.primary = CapsuleLayer(in_units=0,
-                                    in_channels=conv_outputs,
-                                    num_units=num_primary_units,
-                                    unit_size=primary_unit_size,
+                                    in_channels=conv_outputs,     # 1
+                                    num_units=num_primary_units,  # 16
+                                    unit_size=primary_unit_size,  # 16*253
                                     use_routing=False)
 
-        self.digits = CapsuleLayer(in_units=num_primary_units,
-                                   in_channels=primary_unit_size,
-                                   num_units=num_output_units,
-                                   unit_size=output_unit_size,
+        self.digits = CapsuleLayer(in_units=num_primary_units,    # 16
+                                   in_channels=primary_unit_size, # 16*253
+                                   num_units=num_output_units,    # 2
+                                   unit_size=output_unit_size,    # 2
                                    use_routing=True)
 
         reconstruction_size = 512 
