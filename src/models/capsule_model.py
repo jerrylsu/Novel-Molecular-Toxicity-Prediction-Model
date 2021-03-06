@@ -15,7 +15,7 @@ class CapsuleConvLayer(nn.Module):
 
         self.conv0 = nn.Conv1d(in_channels=in_channels,
                                out_channels=out_channels,
-                               kernel_size=40000,  # fixme constant
+                               kernel_size=8,  # fixme constant
                                stride=1,
                                bias=True)
 
