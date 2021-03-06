@@ -191,13 +191,11 @@ class CapsuleModel(nn.Module):
     def forward(self, x):
         # sdae_encoded = self.sdae_model.encoder(x).unsqueeze(1)
         # sdae_encoded = self.sdae_model.encoder[0](x).unsqueeze(1)   # auto-encoder layer0
-        x = self.fc(x) # auto-encoder layer0
-        sdae_encoded = self.relu(x).unsqueeze(1)
-        # x = self.conv1(x)
+        x = self.fc(x)  # auto-encoder layer0
+        x = self.relu(x).unsqueeze(1)
+        sdae_encoded = self.conv1(x)
         x = self.primary(sdae_encoded)
         x = self.digits(x).squeeze(-1)
-        x = x.view(x.shape[0], -1)
-        x = self.fc2(x)
         return x, sdae_encoded
 
     def criterion1(self, input_origin, predict, target, size_average=True):

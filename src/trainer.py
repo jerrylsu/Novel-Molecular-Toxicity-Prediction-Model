@@ -50,8 +50,8 @@ class Trainer:
                                                  conv_outputs=1,      # 256,
                                                  num_primary_units=8,
                                                  primary_unit_size=8*253,  # fixme get from conv2d  61(128)---253(512)--509(1024)
-                                                 num_output_units=128,           # one for each MNIST digit
-                                                 output_unit_size=2).to(self.args.device)
+                                                 num_output_units=2,           # one for each MNIST digit
+                                                 output_unit_size=128).to(self.args.device)
         else:
             raise ValueError("Please input the right model type.")
         self.writer = SummaryWriter(self.args.log_path)
@@ -84,7 +84,7 @@ class Trainer:
                     prediction, sdae_encoded = self.classifier_model(input_ids)
                     # classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
 
-                    predict = prediction  # torch.sqrt((prediction ** 2).sum(dim=2))
+                    predict = torch.sqrt((prediction ** 2).sum(dim=2))
                     classifier_model_loss = self.classifier_model.criterion(predict, label)
                 else:
                     prediction = self.classifier_model(input_ids)
@@ -98,8 +98,7 @@ class Trainer:
                 labels.append(label)
                 # for metric
                 if self.args.model_name == "Capsule":
-                    prediction = prediction.data.max(1, keepdim=True)[1]
-                    # prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
+                    prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
                 else:
                     prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
@@ -132,7 +131,7 @@ class Trainer:
                     prediction, sdae_encoded = self.classifier_model(input_ids)
                     # classifier_model_loss = self.classifier_model.criterion(sdae_encoded, prediction, label)
 
-                    predict = prediction  # torch.sqrt((prediction ** 2).sum(dim=2))
+                    predict = torch.sqrt((prediction ** 2).sum(dim=2))
                     classifier_model_loss = self.classifier_model.criterion(predict, label)
                 else:
                     prediction = self.classifier_model(input_ids)
@@ -150,8 +149,7 @@ class Trainer:
                 labels.append(label)
                 # for metrics
                 if self.args.model_name == "Capsule":
-                    prediction = prediction.data.max(1, keepdim=True)[1]
-                    # prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
+                    prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
                 else:
                     prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
