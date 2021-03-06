@@ -168,7 +168,7 @@ class CapsuleModel(nn.Module):
                                    unit_size=output_unit_size,
                                    use_routing=True)
 
-        reconstruction_size = 128
+        reconstruction_size = 512 
         self.reconstruct0 = nn.Linear(4, 32)
         self.reconstruct1 = nn.Linear(32, 64)
         self.reconstruct2 = nn.Linear(64, reconstruction_size)
@@ -176,7 +176,7 @@ class CapsuleModel(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.sigmoid = nn.Sigmoid()
 
-        self.criterion = nn.CrossEntropyLoss()
+        #self.criterion = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
     def forward(self, x):
@@ -189,7 +189,7 @@ class CapsuleModel(nn.Module):
         x = self.digits(x).squeeze(-1)
         return x, sdae_encoded
 
-    def criterion1(self, input_origin, predict, target, size_average=True):
+    def criterion(self, input_origin, predict, target, size_average=True):
         return self.margin_loss(predict, target, size_average) + self.reconstruction_loss(input_origin, predict, size_average)
 
     def margin_loss(self, predict, target, size_average=True):
