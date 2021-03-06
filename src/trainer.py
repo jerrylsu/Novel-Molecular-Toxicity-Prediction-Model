@@ -98,7 +98,8 @@ class Trainer:
                 labels.append(label)
                 # for metric
                 if self.args.model_name == "Capsule":
-                    prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
+                    prediction = prediction.data.max(1, keepdim=True)[1]
+                    # prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
                 else:
                     prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
@@ -149,7 +150,8 @@ class Trainer:
                 labels.append(label)
                 # for metrics
                 if self.args.model_name == "Capsule":
-                    prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
+                    prediction = prediction.data.max(1, keepdim=True)[1]
+                    # prediction = torch.sqrt((prediction ** 2).sum(dim=2)).max(1)[1]
                 else:
                     prediction = prediction.data.max(1, keepdim=True)[1]
                 predictions.append(prediction)
