@@ -110,7 +110,7 @@ class CapsuleLayer(nn.Module):
         u_hat = torch.matmul(W, x)
 
         # Initialize routing logits to zero.
-        b_ij = Variable(torch.zeros(1, self.in_channels, self.num_units, 1)).cuda()  # in_caps out_caps
+        b_ij = Variable(torch.zeros(1, self.in_channels, self.num_units, 1)).to(x.device)  # in_caps out_caps
 
         # Iterative routing.
         num_iterations = 3
@@ -151,7 +151,7 @@ class CapsuleModel(nn.Module):
 
         self.fc = torch.nn.Linear(227989, 512)
         self.relu = torch.nn.LeakyReLU()
-        self.sdae_model = torch.load(os.path.join(MODEL_DIR, "sdae1024-512-256-128_model-p3-c3-f5.pt")).eval()
+        # self.sdae_model = torch.load(os.path.join(MODEL_DIR, "sdae1024-512-256-128_model-p3-c3-f5.pt")).eval()
 
         self.conv1 = CapsuleConvLayer(in_channels=conv_inputs,
                                       out_channels=conv_outputs)
@@ -199,7 +199,7 @@ class CapsuleModel(nn.Module):
         v_mag = torch.sqrt((predict**2).sum(dim=2, keepdim=True))
 
         # Calculate left and right max() terms from equation 4 in the paper.
-        zero = Variable(torch.zeros(1)).cuda()
+        zero = Variable(torch.zeros(1)).to(predict.device)
         m_plus = 0.9
         m_minus = 0.1
         max_l = torch.max(m_plus - v_mag, zero).view(batch_size, -1)**2
@@ -234,7 +234,7 @@ class CapsuleModel(nn.Module):
 
             # Copy only the maximum capsule index from this batch sample.
             # This masks out (leaves as zero) the other capsules in this sample.
-            batch_masked = Variable(torch.zeros(input_batch.size())).cuda()
+            batch_masked = Variable(torch.zeros(input_batch.size())).to(predict.device)
             batch_masked[v_max_index[batch_idx]] = input_batch[v_max_index[batch_idx]]
             all_masked[batch_idx] = batch_masked
 
