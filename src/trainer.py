@@ -70,7 +70,7 @@ class Trainer:
     def to_serialization(self, visualization: Mapping):
         if not os.path.exists(self.args.visualization_dir):
             os.mkdir(self.args.visualization_dir)
-        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_{self.args.model_name}.pt"))
+        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_{self.args.model_name}_ext.pt"))
 
     def eval(self, epoch):
         self.classifier_model.eval()
@@ -110,9 +110,10 @@ class Trainer:
         validation_f1 = f"F1 of validation epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
         validation_auc = f"Auc of validation epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
         validation_accuracy = f"Accuracy of validation epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-        print(f"Validatopn loss: {round(classifier_model_loss.cpu().item(), 4)}")
+        confusion_matrix = f"Confusion matrix of validation epoch {epoch}: {self.metrics.calculate_confusion_matrix(labels, predictions)}"
+        print(f"Validation loss: {round(classifier_model_loss.cpu().item(), 4)}")
         print(validation_accuracy)
-        return validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, predictions_vis, labels
+        return validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, confusion_matrix, predictions_vis, labels
 
     def train(self):
         self.set_seed(self.args.seed)
@@ -161,7 +162,8 @@ class Trainer:
             train_f1 = f"F1 of train epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
             train_auc = f"Auc of train epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
             train_accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-            validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, validation_predictions_vis, validation_labels = self.eval(epoch=epoch)
+            train_confusion_matrix = f"Confusion matrix of train epoch {epoch}: {self.metrics.calculate_confusion_matrix(labels, predictions)}"
+            validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, validation_confusion_matrix, validation_predictions_vis, validation_labels = self.eval(epoch=epoch)
             print(f"Train loss: {round(classifier_model_loss.cpu().item(), 4)}")
             print(train_accuracy)
             visualization_data[f"epoch{epoch}"] = {"train_classifier": predictions_vis,
@@ -171,13 +173,15 @@ class Trainer:
                                                    "train_f1": train_f1,
                                                    "train_auc": train_auc,
                                                    "train_accuracy": train_accuracy,
+                                                   "train_confusion_matrix": train_confusion_matrix,
                                                    "validation_classifier": validation_predictions_vis,
                                                    "validation_labels": validation_labels,
                                                    "validation_recall": validation_recall,
                                                    "validation_precision": validation_precision,
                                                    "validation_f1": validation_f1,
                                                    "validation_auc": validation_auc,
-                                                   "validation_accuracy": validation_accuracy}
+                                                   "validation_accuracy": validation_accuracy,
+                                                   "validation_confusion_matrix": validation_confusion_matrix}
 
             total_time = time.time() - start_time
         # save for visualization
@@ -208,7 +212,7 @@ if __name__ == "__main__":
                         help="Output for visualization.")
     parser.add_argument("--model_name",
                         type=str,
-                        default="Capsule",  # or Softmax / DNN / Capsule
+                        default="DNN",  # or Softmax / DNN / Capsule
                         help="Model name.")
     parser.add_argument("--device",
                         type=str,

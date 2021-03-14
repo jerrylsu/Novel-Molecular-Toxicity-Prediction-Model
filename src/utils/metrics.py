@@ -27,4 +27,4 @@ class Metrics(object):
         return metrics.classification_report(y_true, y_pred)
 
     def calculate_confusion_matrix(self, y_true: List, y_pred: List):
-        return pd.crosstab(y_true, y_pred, rownames=['Actuall'], colnames=['Predicted'])
+        return metrics.confusion_matrix(y_true, y_pred)

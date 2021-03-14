@@ -68,7 +68,7 @@ class Trainer(object):
     def to_serialization(self, visualization: Mapping):
         if not os.path.exists(self.args.visualization_dir):
             os.mkdir(self.args.visualization_dir)
-        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_SDAE-p{self.args.pretrain_epochs}-c{self.args.classifier_epochs}-f{self.args.finetune_epochs}.pt"))
+        torch.save(visualization, os.path.join(self.args.visualization_dir, f"visualization_SDAE-p{self.args.pretrain_epochs}-c{self.args.classifier_epochs}-f{self.args.finetune_epochs}_ext.pt"))
 
     def _pretrain_sdae_layer(self,
                              dataset: torch.utils.data.Dataset,
@@ -368,8 +368,9 @@ class Trainer(object):
                 train_f1 = f"F1 of train epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
                 train_auc = f"Auc of train epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
                 train_accuracy = f"Accuracy of train epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-                validation_recall, validation_precision, \
-                validation_f1, validation_auc, validation_accuracy,\
+                train_confusion_matrix = f"Confusion matrix of train epoch {epoch}: {self.metrics.calculate_confusion_matrix(labels, predictions)}"
+                validation_recall, validation_precision, validation_f1,\
+                validation_auc, validation_accuracy, validation_confusion_matrix, \
                 validation_predictions_vis, validation_labels = self.eval_sdae_model(epoch=epoch,
                                                                                      autoencoder=autoencoder,
                                                                                      batch_size=batch_size,
@@ -381,13 +382,15 @@ class Trainer(object):
                                                        "train_f1": train_f1,
                                                        "train_auc": train_auc,
                                                        "train_accuracy": train_accuracy,
+                                                       "train_confusion_matrix": train_confusion_matrix,
                                                        "validation_classifier": validation_predictions_vis,
                                                        "validation_labels": validation_labels,
                                                        "validation_recall": validation_recall,
                                                        "validation_precision": validation_precision,
                                                        "validation_f1": validation_f1,
                                                        "validation_auc": validation_auc,
-                                                       "validation_accuracy": validation_accuracy}
+                                                       "validation_accuracy": validation_accuracy,
+                                                       "validation_confusion_matrix": validation_confusion_matrix}
         # Copy the weights to sdae model.
         if not train_sdae:
             self.softmax_layer.copy_weights(autoencoder.softmax_layer)
@@ -427,7 +430,8 @@ class Trainer(object):
         validation_f1 = f"F1 of validation epoch {epoch}: {round(self.metrics.calculate_f1(labels, predictions), 4)}"
         validation_auc = f"Auc of validation epoch {epoch}: {round(self.metrics.calculate_auc(labels, predictions), 4)}"
         validation_accuracy = f"Accuracy of validation epoch {epoch}: {round(self.metrics.calculate_accuracy(labels, predictions), 4)}"
-        return validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, predictions_vis, labels
+        confusion_matrix = f"Confusion matrix of validation epoch {epoch}: {self.metrics.calculate_confusion_matrix(labels, predictions)}"
+        return validation_recall, validation_precision, validation_f1, validation_auc, validation_accuracy, confusion_matrix, predictions_vis, labels
 
 
 if __name__ == "__main__":
