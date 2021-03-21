@@ -1,7 +1,44 @@
 import torch
+from itertools import cycle
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+from sklearn.metrics import roc_curve, auc
+
+
+def plot_roc(predicts, labels, name: str):
+    """Compute and plot ROC & AUC.
+    predicts: [batch_size, n_classes]
+    labels: [batch_size,]
+    name: string
+    """
+    # Compute ROC curve and ROC area for each class
+    labels = torch.nn.functional.one_hot(torch.from_numpy(labels), num_classes=2).numpy()
+    n_classes = predicts.shape[1]
+    fpr, tpr, roc_auc = {}, {}, {}
+    for i in range(n_classes):
+        fpr[i], tpr[i], _ = roc_curve(labels[:, i], predicts[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # Compute micro-average ROC curve and ROC area
+    fpr["micro"], tpr["micro"], _ = roc_curve(labels.ravel(), predicts.ravel())
+    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+    # Plot all ROC curves
+    plt.figure()
+    plt.plot(fpr["micro"], tpr["micro"], color='deeppink', linestyle=':', linewidth=4,
+             label=f'micro-average ROC curve (area = {round(roc_auc["micro"], 2)})')
+    colors = cycle(['aqua', 'darkorange'])
+    for i, color in zip(range(n_classes), colors):
+        plt.plot(fpr[i], tpr[i], color=color, linewidth=2, label=f'ROC curve of class {i} (area = {round(roc_auc[i], 2)})')
+    plt.plot([0, 1], [0, 1], 'k--', linewidth=2)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(name)
+    plt.legend(loc="lower right")
+    plt.show()
 
 
 def Visualization():
@@ -12,8 +49,8 @@ def Visualization():
     pass
 
 
-def plot_3d(encode, labels):
-    fig = plt.figure(num="SDAE")  # 画布
+def plot_3d(encode, labels, name: str):
+    fig = plt.figure(num=name)  # 画布
     ax = Axes3D(fig)
     X, Y, Z = encode[:, 0], encode[:, 1], encode[:, 2]
     for x, y, z, s in zip(X, Y, Z, labels):
@@ -25,8 +62,8 @@ def plot_3d(encode, labels):
     plt.show()
 
 
-def plot_2d(predicts, labels):
-    fig = plt.figure(num="SDAE")  # 画布
+def plot_2d(predicts, labels, name: str):
+    fig = plt.figure(num=name)
     X, Y = predicts[:, 0], predicts[:, 1]
     C = ['r' if label == 0 else 'b' for label in labels]
     for x, y, c in zip(X, Y, C):
@@ -37,7 +74,6 @@ def plot_2d(predicts, labels):
 
 if __name__ == "__main__":
     """Classifier Model: Softmax, DNN, SDAE"""
-
     # softmax model
     softmax_vis = torch.load("../../data/visualization/visualization_Softmax.pt")
     softmax_predicts, softmax_labels = softmax_vis["epoch4"]["validation_classifier"], softmax_vis["epoch4"]["validation_labels"]
@@ -54,6 +90,11 @@ if __name__ == "__main__":
     capsule_vis = torch.load("../../data/visualization/visualization_Capsule_ext.pt")
     capsule_predicts, capsule_labels = capsule_vis["epoch2"]["validation_classifier"], capsule_vis["epoch2"]["validation_labels"]
     capsule_predicts = capsule_predicts.sum(axis=-1)
+
+    plot_roc(softmax_predicts, softmax_labels, "Softmax Model")
+    plot_roc(dnn_predicts, dnn_labels, "SSAE+Softmax Model")
+    plot_roc(sdae_predicts, sdae_labels, "SSAE+Capsule Model")
+
     plot_2d(capsule_predicts, capsule_labels)
     plot_2d(sdae_predicts, sdae_labels)
     plot_2d(softmax_predicts, softmax_labels)
