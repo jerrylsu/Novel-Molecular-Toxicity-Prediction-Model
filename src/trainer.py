@@ -212,7 +212,7 @@ if __name__ == "__main__":
                         help="Output for visualization.")
     parser.add_argument("--model_name",
                         type=str,
-                        default="DNN",  # or Softmax / DNN / Capsule
+                        default="Softmax",  # or Softmax / DNN / Capsule
                         help="Model name.")
     parser.add_argument("--device",
                         type=str,
