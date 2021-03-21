@@ -34,7 +34,7 @@ CSPY连通子图分子指纹模块将字符分子式转成ArrayList数值列表�
 
 ### 1. Softmax Model
 
-- loss
+- Loss
 
 ![loss](./data/results/softmax/loss.png)
 
@@ -42,9 +42,13 @@ CSPY连通子图分子指纹模块将字符分子式转成ArrayList数值列表�
 
 ![validationset](./data/results/softmax/validation_best.png)
 
+- ROC & AUC
+
+![AUC](./data/results/softmax/softmax_auc.png)
+
 ### 2. DNN+Softmax Model
 
-- loss
+- Loss
 
 ![loss](./data/results/deep_neural_network/loss.jpeg)
 
@@ -56,9 +60,13 @@ CSPY连通子图分子指纹模块将字符分子式转成ArrayList数值列表�
 
 ![validationset](./data/results/deep_neural_network/validation_best.png)
 
-### 3. SAE+Softmax Model
+- ROC & AUC
 
-- loss
+![AUC](./data/results/deep_neural_network/dnn_auc.png)
+
+### 3. SSAE+Softmax Model
+
+- Loss
 
 ![loss](./data/results/stacked_autoencoder/loss.png)
 
@@ -66,7 +74,15 @@ CSPY连通子图分子指纹模块将字符分子式转成ArrayList数值列表�
 
 ![validationset](./data/results/stacked_autoencoder/validation_best.png)
 
-### 4. SAE+CapsNets Model
+- ROC & AUC
+
+![AUC](./data/results/stacked_autoencoder/ssae_softmax_auc.png)
+
+### 4. SSAE+CapsNets Model
+
+- ROC & AUC
+
+![AUC](./data/results/sdae_capsule/ssae+capsule_auc.png)
 
 ### Reference
 
